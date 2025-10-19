@@ -65,6 +65,22 @@ Catch quieter notes:
 .\RUN.bat input.mp3 --onset-threshold 0.3
 ```
 
+### Evaluate Transcription Quality
+Compare results against original audio:
+```powershell
+.\RUN.bat input.mp3 --evaluate-quality --verbose
+
+# Compare neural network vs spectral methods
+.\RUN.bat input.mp3 --evaluate-quality --verbose           # basic-pitch
+.\RUN.bat input.mp3 --use-spectral --evaluate-quality --verbose  # CQT spectral
+```
+
+### Skip Hand Separation
+Keep all notes in one track:
+```powershell
+.\RUN.bat input.mp3 --no-hand-separation
+```
+
 ## All Options
 
 ```
@@ -100,12 +116,22 @@ Catch quieter notes:
 | `--min-velocity` | Min note velocity (0-127) | 15 |
 | `--no-quantize` | Disable rhythmic quantization | off (quantize ON) |
 | `--quantize-resolution` | Quantization: 4/8/16/32 notes | 16 |
+| `--no-merge` | Disable note merging (legato) | off (merge ON) |
+| `--merge-threshold` | Max gap for merging (ms) | 50 |
 
 ### Hand Separation Options
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--split-note` | MIDI note for hand split | 60 (middle C) |
 | `--hysteresis` | Prevents rapid hand switching | 5 semitones |
+| `--no-hand-separation` | Keep all notes in single track | off (separation ON) |
+
+### Advanced Options
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--align-to-audio` | Align MIDI timing to audio (DTW) | off (slower) |
+| `--use-spectral` | Use CQT spectral transcription | off (experimental) |
+| `--evaluate-quality` | Evaluate transcription quality | off |
 
 ### General Options
 | Option | Description | Default |
@@ -187,13 +213,28 @@ Opens in any DAW or notation software (MuseScore, FL Studio, Ableton, Sibelius, 
 - Exports phrases as separate MIDI files
 - Useful for finding themes, melodies, and musical ideas
 
+### 🎯 Spectral Transcription (EXPERIMENTAL!)
+- **CQT-based analysis**: Constant-Q Transform for better piano frequency resolution
+- **HPSS**: Harmonic-Percussive Source Separation
+- **Peak detection**: Identifies notes from spectral peaks
+- **Alternative method**: Can be used instead of neural network (--use-spectral)
+
+### 📊 Quality Evaluation (NEW!)
+- **Spectral similarity**: Chromagram correlation with original audio
+- **Onset detection**: Precision, recall, and F1 score for note timing
+- **Temporal coverage**: Percentage of audio covered by MIDI notes
+- **Pitch distribution**: Similarity of pitch class profiles
+- **Overall quality score**: Weighted average with 5-star rating system
+- **Comparison tool**: Validate and compare transcription methods
+
 ## Technology
 
 - **Source Separation**: Meta's Demucs (HTDemucs - Hybrid Transformer model)
-- **Transcription**: Spotify's basic-pitch (state-of-the-art neural network)
-- **Error Correction**: Krumhansl-Schmuckler key detection + statistical filtering
+- **Transcription**: Spotify's basic-pitch (state-of-the-art neural network) + CQT spectral analysis
+- **Error Correction**: Krumhansl-Schmuckler key detection + statistical filtering + note merging
 - **Hand Separation**: Rule-based algorithm with pitch clustering and voice leading
-- **Environment**: Python 3.11 with TensorFlow 2.15 + PyTorch 2.9
+- **Quality Evaluation**: Multi-metric spectral analysis (chromagram, DTW, pitch distribution)
+- **Environment**: Python 3.11 with TensorFlow 2.15 + PyTorch 2.5.1
 
 ## Setup (Already Done!)
 
