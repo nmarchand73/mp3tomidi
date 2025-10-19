@@ -5,3 +5,10 @@ basic-pitch
 mido
 librosa
 soundfile
+demucs
+av
+ffmpeg-python
+
+# Pin PyTorch versions for compatibility with Demucs
+torch==2.5.1
+torchaudio==2.5.1

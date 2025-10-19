@@ -17,6 +17,7 @@ from pathlib import Path
 from transcribe import AudioTranscriber
 from hand_separator import HandSeparator
 from midi_corrector import MidiCorrector
+from audio_separator import AudioSeparator
 import mido
 
 
@@ -119,6 +120,12 @@ Notes:
         help='Minimum note velocity for error correction (default: 15)'
     )
     
+    parser.add_argument(
+        '--no-separation',
+        action='store_true',
+        help='Skip audio source separation (use if input is already solo piano)'
+    )
+    
     args = parser.parse_args()
     
     # Validate input file
@@ -155,15 +162,39 @@ Notes:
         print("="*60)
     
     try:
-        # Step 1: Transcribe audio to MIDI
-        print("\n[1/4] Transcribing audio to MIDI...")
-        transcriber = AudioTranscriber()
-        
-        # Use temp directory for intermediate MIDI file
+        # Use temp directory for intermediate files
         temp_dir = tempfile.gettempdir()
         
+        # Step 1: Separate piano from mixed audio (if needed)
+        audio_to_transcribe = args.input
+        separation_performed = False
+        
+        if not args.no_separation:
+            print("\n[1/5] Separating piano from audio...")
+            separator = AudioSeparator()
+            
+            if separator.demucs_available:
+                audio_to_transcribe = separator.separate_piano(
+                    audio_file=args.input,
+                    output_dir=temp_dir,
+                    verbose=args.verbose
+                )
+                separation_performed = (audio_to_transcribe != args.input)
+            else:
+                if args.verbose:
+                    print("  Demucs not installed - skipping separation")
+                    print("  Install with: pip install demucs")
+                print("  Proceeding with original audio (assuming solo piano)")
+        else:
+            if args.verbose:
+                print("\n[1/5] Skipping audio separation (--no-separation flag)")
+        
+        # Step 2: Transcribe audio to MIDI
+        print(f"\n[2/5] Transcribing audio to MIDI...")
+        transcriber = AudioTranscriber()
+        
         transcribed_midi_path = transcriber.transcribe(
-            audio_file=args.input,
+            audio_file=audio_to_transcribe,
             output_dir=temp_dir,
             onset_threshold=args.onset_threshold,
             frame_threshold=args.frame_threshold,
@@ -177,11 +208,11 @@ Notes:
             print(f"  - Pitch range: {info['pitch_range'][0]} - {info['pitch_range'][1]}")
             print(f"  - Ticks per beat: {info['ticks_per_beat']}")
         
-        # Step 2: Error correction
+        # Step 3: Error correction
         transcribed_midi = mido.MidiFile(transcribed_midi_path)
         
         if not args.no_correction:
-            print("\n[2/4] Correcting errors...")
+            print("\n[3/5] Correcting errors...")
             corrector = MidiCorrector(
                 min_note_duration_ms=args.min_note_duration,
                 min_velocity=args.min_velocity
@@ -189,17 +220,17 @@ Notes:
             transcribed_midi = corrector.correct(transcribed_midi, verbose=args.verbose)
         else:
             if args.verbose:
-                print("\n[2/4] Skipping error correction...")
+                print("\n[3/5] Skipping error correction...")
         
-        # Step 3: Separate hands
-        print("\n[3/4] Separating left and right hand parts...")
-        separator = HandSeparator(
+        # Step 4: Separate hands
+        print("\n[4/5] Separating left and right hand parts...")
+        hand_separator = HandSeparator(
             split_note=args.split_note,
             hysteresis=args.hysteresis
         )
         
         # Perform hand separation
-        separated_midi = separator.separate(transcribed_midi)
+        separated_midi = hand_separator.separate(transcribed_midi)
         
         if args.verbose:
             # Count notes in each track
@@ -214,21 +245,28 @@ Notes:
             print(f"  - Right hand: {right_notes} notes")
             print(f"  - Left hand: {left_notes} notes")
         
-        # Step 4: Save output
-        print("\n[4/4] Saving output MIDI file...")
+        # Step 5: Save output
+        print("\n[5/5] Saving output MIDI file...")
         separated_midi.save(args.output)
         
         if args.verbose:
             print(f"  - Saved to: {args.output}")
         
-        # Clean up temp file unless requested to keep
+        # Clean up temp files unless requested to keep
         if not args.keep_temp:
             try:
                 os.remove(transcribed_midi_path)
             except:
                 pass
+            
+            # Clean up separation files if we performed separation
+            if separation_performed and not args.no_separation:
+                try:
+                    AudioSeparator().cleanup_separation(temp_dir)
+                except:
+                    pass
         else:
-            temp_output = f"{output_path.stem}_transcribed.mid"
+            temp_output = f"{Path(args.output).stem}_transcribed.mid"
             os.rename(transcribed_midi_path, temp_output)
             if args.verbose:
                 print(f"  - Intermediate MIDI saved to: {temp_output}")

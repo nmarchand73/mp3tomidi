@@ -2,6 +2,8 @@
 
 Convert piano recordings (MP3, WAV) to MIDI files with automatic left/right hand separation.
 
+**✨ NEW: Works with mixed audio!** Automatically isolates piano from songs with vocals, drums, and other instruments.
+
 ## ✅ Ready to Use!
 
 Python 3.11 environment is already set up in your Conda installation.
@@ -23,6 +25,8 @@ C:\Users\nmarc\miniconda3\envs\mp3tomidi\python.exe mp3tomidi.py "input\A Forest
 C:\Users\nmarc\miniconda3\envs\mp3tomidi\python.exe mp3tomidi.py input.mp3
 ```
 Creates `output/input.mid` with 2 tracks (right hand + left hand).
+
+**Note:** First run will download AI models (~80MB for Demucs). Audio separation adds ~1-2 minutes per minute of audio. Use `--no-separation` for solo piano recordings (faster).
 
 ## Common Adjustments
 
@@ -62,6 +66,11 @@ Catch quieter notes:
 | `--onset-threshold` | Note detection (0-1, higher=stricter) | 0.5 |
 | `--frame-threshold` | Duration detection (0-1) | 0.3 |
 
+### Source Separation Options  
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--no-separation` | Skip audio separation (for solo piano) | off |
+
 ### Error Correction Options
 | Option | Description | Default |
 |--------|-------------|---------|
@@ -91,30 +100,46 @@ Opens in any DAW or notation software (MuseScore, FL Studio, Ableton, Sibelius, 
 
 ## Tips
 
-✓ Use clear, solo piano recordings  
-✓ Start with defaults, adjust only if needed  
-✓ Processing time ≈ 1-2x audio length  
+✓ **Works with mixed audio!** Automatically isolates piano from vocals/drums/other instruments  
+✓ For solo piano recordings, use `--no-separation` to skip separation (faster)  
+✓ First run downloads models: Demucs (~80MB) + Basic-Pitch (auto)  
+✓ Processing time: ~1.5x audio length with separation, ~0.5x without  
 ✓ Expected accuracy: ~85% transcription, ~70% hand separation  
+✓ Best results with clear piano parts (covers, soundtracks, pop songs with piano)  
+✓ Start with defaults, adjust only if results need refinement  
 
 ## Test Results
 
-Sample conversion of "A Forest.mp3":
-- **Transcribed**: 1042 notes (pitch range: MIDI 33-81)
+### Solo Piano - "A Forest.mp3" (1:15)
+- **Transcribed**: 1042 notes (MIDI 33-81)
 - **Detected key**: D# minor
-- **Error correction**: 0 notes removed (all passed quality filters)
-- **Out-of-key notes**: 772 flagged (74.1% - typical for chromatic music)
-- **Right hand**: 449 notes
-- **Left hand**: 454 notes
-- **Processing time**: ~15 seconds
+- **Error correction**: 0 notes removed
+- **Out-of-key**: 772 notes (74.1% - typical for chromatic music)
+- **Right hand**: 449 notes | **Left hand**: 454 notes
+- **Time**: ~15 seconds (with `--no-separation`)
+
+### Mixed Audio - "Paint It Black - Westworld Soundtrack.mp3" (4:02)
+- **Separation**: ✓ Successfully isolated piano from vocals/drums
+- **Transcribed**: 2349 notes (MIDI 24-88) from separated track
+- **Detected key**: G# minor
+- **Out-of-key**: 947 notes (40.3%)
+- **Right hand**: 898 notes | **Left hand**: 1082 notes
+- **Time**: ~6 minutes (4 min separation + 2 min transcription)
 
 ## Features
+
+### 🎼 Audio Source Separation (NEW!)
+- **Automatic piano isolation** using Meta's Demucs (HTDemucs model)
+- Works with **mixed audio** (vocals, drums, other instruments)
+- Extracts piano/keyboard tracks before transcription
+- Optional - can be skipped for solo piano recordings
 
 ### 🎵 Audio Transcription
 - Spotify's basic-pitch neural network (~85-90% accuracy)
 - Polyphonic piano transcription
 - Configurable sensitivity
 
-### ✨ Error Correction (NEW!)
+### ✨ Error Correction
 - **Duration filtering**: Removes very short notes (< 50ms)
 - **Velocity filtering**: Removes very quiet notes (< velocity 15)
 - **Range filtering**: Removes notes outside piano range (A0-C8)
@@ -128,10 +153,11 @@ Sample conversion of "A Forest.mp3":
 
 ## Technology
 
+- **Source Separation**: Meta's Demucs (HTDemucs - Hybrid Transformer model)
 - **Transcription**: Spotify's basic-pitch (state-of-the-art neural network)
 - **Error Correction**: Krumhansl-Schmuckler key detection + statistical filtering
 - **Hand Separation**: Rule-based algorithm with pitch clustering and voice leading
-- **Environment**: Python 3.11 with TensorFlow 2.15
+- **Environment**: Python 3.11 with TensorFlow 2.15 + PyTorch 2.9
 
 ## Setup (Already Done!)
 
