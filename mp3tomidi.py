@@ -179,9 +179,11 @@ Notes:
     output_dir = Path("output")
     midi_dir = output_dir / "midi"
     phrases_dir = output_dir / "phrases"
+    audio_dir = output_dir / "audio"
     
     midi_dir.mkdir(parents=True, exist_ok=True)
     phrases_dir.mkdir(parents=True, exist_ok=True)
+    audio_dir.mkdir(parents=True, exist_ok=True)
     
     # Determine output path
     if args.output is None:

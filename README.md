@@ -25,6 +25,7 @@ C:\Users\nmarc\miniconda3\envs\mp3tomidi\python.exe mp3tomidi.py "input\A Forest
 C:\Users\nmarc\miniconda3\envs\mp3tomidi\python.exe mp3tomidi.py input.mp3
 ```
 Creates `output/midi/input.mid` with 2 tracks (right hand + left hand).
+Separated audio is saved to `output/audio/` (piano only).
 
 **Note:** First run will download AI models (~80MB for Demucs). Audio separation adds ~1-2 minutes per minute of audio. Use `--no-separation` for solo piano recordings (faster).
 
