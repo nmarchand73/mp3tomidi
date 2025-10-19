@@ -19,6 +19,7 @@ from hand_separator import HandSeparator
 from midi_corrector import MidiCorrector
 from audio_separator import AudioSeparator
 from motif_extractor_v2 import MusicalPhraseDetector
+from quality_evaluator import QualityEvaluator
 import mido
 
 
@@ -72,6 +73,12 @@ Notes:
         '--no-hand-separation',
         action='store_true',
         help='Disable hand separation (output single track with all notes)'
+    )
+    
+    parser.add_argument(
+        '--no-quality-eval',
+        action='store_true',
+        help='Skip quality evaluation (saves ~10s processing time)'
     )
     
     parser.add_argument(
@@ -272,15 +279,16 @@ Notes:
         
         # Step 2: Transcribe audio to MIDI using basic-pitch
         print(f"\n[2/5] Transcribing audio to MIDI...")
-        
+
         transcriber = AudioTranscriber()
-        
+
         transcribed_midi_path = transcriber.transcribe(
             audio_file=audio_to_transcribe,
             output_dir=temp_dir,
             onset_threshold=args.onset_threshold,
             frame_threshold=args.frame_threshold,
-            minimum_note_length=args.min_note_length
+            minimum_note_length=args.min_note_length,
+            verbose=args.verbose
         )
         
         if args.verbose:
@@ -289,6 +297,41 @@ Notes:
             print(f"  - Transcribed {info['total_notes']} notes")
             print(f"  - Pitch range: {info['pitch_range'][0]} - {info['pitch_range'][1]}")
             print(f"  - Ticks per beat: {info['ticks_per_beat']}")
+        
+        # Step 2.5: Evaluate transcription quality (runs by default)
+        if not args.no_quality_eval:
+            print(f"\n[2.5/5] Evaluating transcription quality...")
+            evaluator = QualityEvaluator(sr=22050)
+            
+            transcribed_midi_for_eval = mido.MidiFile(transcribed_midi_path)
+            quality_metrics = evaluator.evaluate(
+                audio_to_transcribe,
+                transcribed_midi_for_eval,
+                verbose=args.verbose
+            )
+            
+            # Always show quality summary (not just in verbose mode)
+            print(f"\n  Quality Report:")
+            print(f"  ─────────────────────────────────────")
+            print(f"  Onset F1 Score:        {quality_metrics['onset_f1']:.1%}")
+            print(f"  Pitch Accuracy:        {quality_metrics['pitch_accuracy']:.1%}")
+            print(f"  Spectral Similarity:   {quality_metrics['spectral_similarity']:.1%}")
+            print(f"  Polyphony Score:       {quality_metrics['polyphony_score']:.1%}")
+            print(f"  Rhythmic Precision:    {quality_metrics['rhythmic_precision']:.1%}")
+            print(f"  ─────────────────────────────────────")
+            print(f"  Overall Quality:       {quality_metrics['overall_quality']:.1%} ★")
+            
+            # Quality rating
+            score = quality_metrics['overall_quality']
+            if score >= 0.9:
+                rating = "Excellent"
+            elif score >= 0.75:
+                rating = "Good"
+            elif score >= 0.6:
+                rating = "Fair"
+            else:
+                rating = "Poor"
+            print(f"  Rating: {rating}\n")
         
         # Step 3: Error correction
         transcribed_midi = mido.MidiFile(transcribed_midi_path)

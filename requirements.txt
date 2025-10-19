@@ -5,6 +5,7 @@ basic-pitch
 mido
 librosa
 soundfile
+scipy
 demucs
 av
 ffmpeg-python

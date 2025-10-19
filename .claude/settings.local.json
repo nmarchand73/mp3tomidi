@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(C:/Users/nmarc/miniconda3/envs/mp3tomidi/python.exe mp3tomidi.py \"input/A Forest.mp3\" --no-separation --verbose)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

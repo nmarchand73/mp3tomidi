@@ -65,6 +65,13 @@ Catch quieter notes:
 .\RUN.bat input.mp3 --onset-threshold 0.3
 ```
 
+### Skip Quality Evaluation
+Quality evaluation runs by default. To skip it for faster processing:
+```powershell
+.\RUN.bat input.mp3 --no-quality-eval
+```
+Saves ~10 seconds per file.
+
 ### Skip Hand Separation
 Keep all notes in one track:
 ```powershell
@@ -121,6 +128,7 @@ Keep all notes in one track:
 |--------|-------------|---------|
 | `-v, --verbose` | Show detailed progress | off |
 | `--keep-temp` | Keep intermediate files | off |
+| `--no-quality-eval` | Skip quality evaluation | off (evaluation ON) |
 
 ## Output
 
@@ -170,6 +178,16 @@ Opens in any DAW or notation software (MuseScore, FL Studio, Ableton, Sibelius, 
 - Spotify's basic-pitch neural network (~85-90% accuracy)
 - Polyphonic piano transcription
 - Configurable sensitivity
+
+### 📊 Quality Evaluation (NEW! - RUNS BY DEFAULT)
+- **Onset F1 Score**: Note timing accuracy (MIREX standard)
+- **Pitch Accuracy**: Pitch correctness with tolerance window
+- **Spectral Similarity**: Chromagram correlation with original audio
+- **Polyphony Score**: Simultaneous note count comparison
+- **Rhythmic Precision**: Inter-onset interval analysis
+- **Overall Quality**: Weighted score (0-100%) with rating (Excellent/Good/Fair/Poor)
+- **Automatic**: Runs on every transcription, displays quality report
+- **Optional**: Use `--no-quality-eval` to skip (saves ~10s)
 
 ### ✨ Enhanced Error Correction (NEW!)
 - **Smart duration handling**: Removes only very short notes (<50ms), extends short notes (50-120ms)
