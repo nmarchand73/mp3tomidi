@@ -15,13 +15,10 @@ import tempfile
 from pathlib import Path
 
 from transcribe import AudioTranscriber
-from advanced_transcriber import AdvancedTranscriber
 from hand_separator import HandSeparator
 from midi_corrector import MidiCorrector
 from audio_separator import AudioSeparator
 from motif_extractor_v2 import MusicalPhraseDetector
-from audio_midi_aligner import AudioMidiAligner
-from spectral_transcriber import SpectralTranscriber
 from transcription_evaluator import TranscriptionEvaluator
 import mido
 
@@ -76,24 +73,6 @@ Notes:
         '--no-hand-separation',
         action='store_true',
         help='Disable hand separation (output single track with all notes)'
-    )
-    
-    parser.add_argument(
-        '--align-to-audio',
-        action='store_true',
-        help='Align MIDI timing to audio using spectral analysis (advanced, slower)'
-    )
-    
-    parser.add_argument(
-        '--use-spectral',
-        action='store_true',
-        help='Use CQT spectral analysis instead of neural network (experimental, may be more accurate)'
-    )
-    
-    parser.add_argument(
-        '--use-advanced',
-        action='store_true',
-        help='Use advanced multi-pass transcription (better quality, slower)'
     )
     
     parser.add_argument(
@@ -298,76 +277,25 @@ Notes:
             if args.verbose:
                 print("\n[1/5] Skipping audio separation (--no-separation flag)")
         
-        # Step 2: Transcribe audio to MIDI
+        # Step 2: Transcribe audio to MIDI using basic-pitch
         print(f"\n[2/5] Transcribing audio to MIDI...")
         
-        if args.use_advanced:
-            # Use advanced multi-pass transcription
-            if args.verbose:
-                print("  Using Advanced Multi-Pass Transcription...")
-            
-            advanced_transcriber = AdvancedTranscriber()
-            
-            transcribed_midi_path = advanced_transcriber.transcribe(
-                audio_file=audio_to_transcribe,
-                output_dir=temp_dir,
-                multi_pass=True,
-                onset_alignment=True,
-                duration_smoothing=True,
-                verbose=args.verbose
-            )
-            
-            if args.verbose:
-                midi_file = mido.MidiFile(transcribed_midi_path)
-                note_count = sum(1 for track in midi_file.tracks
-                               for msg in track if msg.type == 'note_on' and msg.velocity > 0)
-                print(f"  - Transcribed {note_count} notes (Advanced method)")
+        transcriber = AudioTranscriber()
         
-        elif args.use_spectral:
-            # Use CQT-based spectral transcription
-            if args.verbose:
-                print("  Using Constant-Q Transform (CQT) spectral analysis...")
-            
-            spectral_transcriber = SpectralTranscriber(
-                sr=22050,
-                onset_threshold=args.onset_threshold
-            )
-            
-            transcribed_midi = spectral_transcriber.transcribe(
-                audio_to_transcribe,
-                verbose=args.verbose
-            )
-            
-            # Save to temp file
-            transcribed_midi_path = os.path.join(
-                temp_dir,
-                f"{Path(audio_to_transcribe).stem}_spectral.mid"
-            )
-            transcribed_midi.save(transcribed_midi_path)
-            
-            if args.verbose:
-                # Count notes
-                note_count = sum(1 for track in transcribed_midi.tracks
-                               for msg in track if msg.type == 'note_on' and msg.velocity > 0)
-                print(f"  - Transcribed {note_count} notes (CQT method)")
-        else:
-            # Use neural network transcription (basic-pitch)
-            transcriber = AudioTranscriber()
-            
-            transcribed_midi_path = transcriber.transcribe(
-                audio_file=audio_to_transcribe,
-                output_dir=temp_dir,
-                onset_threshold=args.onset_threshold,
-                frame_threshold=args.frame_threshold,
-                minimum_note_length=args.min_note_length
-            )
-            
-            if args.verbose:
-                midi_file = mido.MidiFile(transcribed_midi_path)
-                info = transcriber.get_midi_info(midi_file)
-                print(f"  - Transcribed {info['total_notes']} notes")
-                print(f"  - Pitch range: {info['pitch_range'][0]} - {info['pitch_range'][1]}")
-                print(f"  - Ticks per beat: {info['ticks_per_beat']}")
+        transcribed_midi_path = transcriber.transcribe(
+            audio_file=audio_to_transcribe,
+            output_dir=temp_dir,
+            onset_threshold=args.onset_threshold,
+            frame_threshold=args.frame_threshold,
+            minimum_note_length=args.min_note_length
+        )
+        
+        if args.verbose:
+            midi_file = mido.MidiFile(transcribed_midi_path)
+            info = transcriber.get_midi_info(midi_file)
+            print(f"  - Transcribed {info['total_notes']} notes")
+            print(f"  - Pitch range: {info['pitch_range'][0]} - {info['pitch_range'][1]}")
+            print(f"  - Ticks per beat: {info['ticks_per_beat']}")
         
         # Step 3: Error correction
         transcribed_midi = mido.MidiFile(transcribed_midi_path)
@@ -387,15 +315,6 @@ Notes:
             if args.verbose:
                 print("\n[3/5] Skipping error correction...")
         
-        # Step 3.5: Align MIDI to audio (optional, advanced)
-        if args.align_to_audio:
-            print("\n[3.5/5] Aligning MIDI timing to audio (spectral analysis)...")
-            aligner = AudioMidiAligner(sr=22050)
-            transcribed_midi = aligner.align(
-                audio_to_transcribe,
-                transcribed_midi,
-                verbose=args.verbose
-            )
         
         # Step 4: Separate hands (optional)
         if not args.no_hand_separation:

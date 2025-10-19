@@ -65,26 +65,10 @@ Catch quieter notes:
 .\RUN.bat input.mp3 --onset-threshold 0.3
 ```
 
-### Advanced Multi-Pass Transcription
-For maximum note capture (best recall, 3x slower):
-```powershell
-.\RUN.bat input.mp3 --use-advanced --verbose
-
-# Recommended for:
-# - Complex music with many weak/soft notes
-# - Maximum note detection (+70% recall vs default)
-# - Willingness to clean up some false positives
-```
-
 ### Evaluate Transcription Quality
 Compare results against original audio:
 ```powershell
 .\RUN.bat input.mp3 --evaluate-quality --verbose
-
-# Compare all methods:
-.\RUN.bat input.mp3 --evaluate-quality --verbose                    # basic-pitch (best)
-.\RUN.bat input.mp3 --use-advanced --evaluate-quality --verbose     # multi-pass
-.\RUN.bat input.mp3 --use-spectral --evaluate-quality --verbose     # CQT spectral
 ```
 
 ### Skip Hand Separation
@@ -141,9 +125,6 @@ Keep all notes in one track:
 ### Advanced Options
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--use-advanced` | Multi-pass transcription (+70% recall) | off (3x slower) |
-| `--align-to-audio` | Align MIDI timing to audio (DTW) | off (slower) |
-| `--use-spectral` | Use CQT spectral transcription | off (experimental) |
 | `--evaluate-quality` | Evaluate transcription quality | off |
 
 ### General Options
@@ -226,41 +207,21 @@ Opens in any DAW or notation software (MuseScore, FL Studio, Ableton, Sibelius, 
 - Exports phrases as separate MIDI files
 - Useful for finding themes, melodies, and musical ideas
 
-### 🎯 Spectral Transcription (EXPERIMENTAL!)
-- **CQT-based analysis**: Constant-Q Transform for better piano frequency resolution
-- **HPSS**: Harmonic-Percussive Source Separation
-- **Peak detection**: Identifies notes from spectral peaks
-- **Alternative method**: Can be used instead of neural network (--use-spectral)
-
-### 🎯 Advanced Multi-Pass Transcription (NEW!)
-- **3-pass detection**: Strict + Default + Sensitive thresholds
-- **Intelligent merging**: Weighted voting with note clustering
-- **Piano optimization**: Frequency range limiting (27.5-4186 Hz)
-- **Onset alignment**: DTW-based alignment with audio onsets (~37ms avg correction)
-- **Duration smoothing**: Harmonic analysis for natural note lengths
-- **+70% recall**: Captures weak/soft notes that default method misses
-- **Trade-off**: Lower precision (more false positives), 3x slower
-
 ### 📊 Quality Evaluation (NEW!)
 - **Spectral similarity**: Chromagram correlation with original audio
 - **Onset detection**: Precision, recall, and F1 score for note timing
 - **Temporal coverage**: Percentage of audio covered by MIDI notes
 - **Pitch distribution**: Similarity of pitch class profiles
-- **Overall quality score**: Weighted average with 5-star rating system
-- **Comparison tool**: Validate and compare transcription methods
-
-**Benchmark (IT FLOWS.mp3):**
-- Basic-Pitch: 71.7% ⭐⭐⭐⭐ (best overall, recommended)
-- Advanced Multi-Pass: 69.9% ⭐⭐⭐⭐ (best recall +70%)
-- CQT Spectral: 55.3% ⭐⭐⭐ (experimental)
+- **Overall quality score**: Weighted average with 5-star rating system (0-100%)
+- **Use `--evaluate-quality`** to measure transcription accuracy
 
 ## Technology
 
 - **Source Separation**: Meta's Demucs (HTDemucs - Hybrid Transformer model)
-- **Transcription**: Spotify's basic-pitch (state-of-the-art neural network) + CQT spectral analysis
+- **Transcription**: Spotify's basic-pitch (state-of-the-art neural network, ~72% quality)
 - **Error Correction**: Krumhansl-Schmuckler key detection + statistical filtering + note merging
 - **Hand Separation**: Rule-based algorithm with pitch clustering and voice leading
-- **Quality Evaluation**: Multi-metric spectral analysis (chromagram, DTW, pitch distribution)
+- **Quality Evaluation**: Multi-metric spectral analysis (chromagram, onset detection, coverage)
 - **Environment**: Python 3.11 with TensorFlow 2.15 + PyTorch 2.5.1
 
 ## Setup (Already Done!)
