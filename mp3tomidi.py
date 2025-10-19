@@ -18,7 +18,7 @@ from transcribe import AudioTranscriber
 from hand_separator import HandSeparator
 from midi_corrector import MidiCorrector
 from audio_separator import AudioSeparator
-from motif_extractor import MotifExtractor
+from motif_extractor_v2 import EnhancedMotifExtractor
 import mido
 
 
@@ -136,8 +136,8 @@ Notes:
     parser.add_argument(
         '--motif-min-length',
         type=int,
-        default=3,
-        help='Minimum motif length in notes (default: 3)'
+        default=5,
+        help='Minimum motif length in notes (default: 5)'
     )
     
     parser.add_argument(
@@ -145,6 +145,20 @@ Notes:
         type=int,
         default=12,
         help='Maximum motif length in notes (default: 12)'
+    )
+    
+    parser.add_argument(
+        '--motif-count',
+        type=int,
+        default=1,
+        help='Number of top motifs to extract (default: 1)'
+    )
+    
+    parser.add_argument(
+        '--motif-similarity',
+        type=float,
+        default=0.8,
+        help='Similarity threshold for approximate matching 0-1 (default: 0.8)'
     )
     
     args = parser.parse_args()
@@ -268,10 +282,11 @@ Notes:
         
         # Step 5: Extract motif (optional)
         if args.extract_motif:
-            print("\n[5/6] Extracting most repeated motif...")
-            extractor = MotifExtractor(
+            print(f"\n[5/6] Extracting top {args.motif_count} motif(s)...")
+            extractor = EnhancedMotifExtractor(
                 min_motif_length=args.motif_min_length,
-                max_motif_length=args.motif_max_length
+                max_motif_length=args.motif_max_length,
+                similarity_threshold=args.motif_similarity
             )
             
             # Create motif output path
@@ -279,7 +294,12 @@ Notes:
             motif_output = output_path_obj.parent / f"{output_path_obj.stem}_motif.mid"
             
             # Extract motif from the corrected MIDI (before hand separation)
-            extractor.extract(transcribed_midi, str(motif_output), verbose=args.verbose)
+            motif_results = extractor.extract(
+                transcribed_midi, 
+                str(motif_output), 
+                verbose=args.verbose,
+                top_n=args.motif_count
+            )
         
         # Step 6: Save output
         step_num = "6/6" if args.extract_motif else "5/5"
@@ -312,10 +332,13 @@ Notes:
         print(f"  Track 0: Right Hand")
         print(f"  Track 1: Left Hand")
         
-        if args.extract_motif:
-            output_path_obj = Path(args.output)
-            motif_output = output_path_obj.parent / f"{output_path_obj.stem}_motif.mid"
-            print(f"\n✓ Motif extracted to: {motif_output}")
+        if args.extract_motif and motif_results:
+            print(f"\n✓ Extracted {len(motif_results)} motif(s):")
+            for result in motif_results:
+                print(f"  #{result['rank']}: {result['file']} "
+                      f"(score: {result['score']:.1f}, {result['frequency']}x)")
+        elif args.extract_motif:
+            print(f"\n⚠ No significant motifs found")
         
     except Exception as e:
         print(f"\n✗ Error: {str(e)}", file=sys.stderr)

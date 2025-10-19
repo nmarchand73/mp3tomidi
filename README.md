@@ -35,10 +35,14 @@ Creates `output/input.mid` with 2 tracks (right hand + left hand).
 .\RUN.bat input.mp3 -o myfile.mid      # Save to specific file
 ```
 
-### Extract Repeated Motif
+### Extract Repeated Motifs
 ```powershell
+# Extract single best motif
 .\RUN.bat input.mp3 --extract-motif --verbose
-# Creates: output/input.mid (full song) + output/input_motif.mid (repeated pattern)
+
+# Extract top 3 motifs
+.\RUN.bat input.mp3 --extract-motif --motif-count 3 --verbose
+# Creates: output/input.mid + output/input_motif1.mid, input_motif2.mid, input_motif3.mid
 ```
 
 ### Change Split Point
@@ -80,9 +84,11 @@ Catch quieter notes:
 ### Motif Extraction Options
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--extract-motif` | Extract most repeated motif | off |
-| `--motif-min-length` | Minimum notes in motif | 3 |
-| `--motif-max-length` | Maximum notes in motif | 12 |
+| `--extract-motif` | Extract most repeated motif(s) | off |
+| `--motif-count` | Number of top motifs to extract | 1 |
+| `--motif-min-length` | Minimum notes in motif | 5 |
+| `--motif-max-length` | Maximum notes in motif | 16 |
+| `--motif-similarity` | Similarity threshold for matching (0-1) | 0.8 |
 
 ### Error Correction Options
 | Option | Description | Default |
@@ -164,12 +170,14 @@ Opens in any DAW or notation software (MuseScore, FL Studio, Ableton, Sibelius, 
 - Voice leading principles
 - Configurable split point and hysteresis
 
-### 🎼 Motif Extraction (NEW!)
-- **Identifies most repeated musical motif** automatically
-- Analyzes melodic patterns (pitch intervals)
-- Analyzes rhythmic patterns (note durations)
-- Exports motif as separate MIDI file
-- Useful for finding themes, hooks, and riffs
+### 🎼 Motif Extraction (ENHANCED!)
+- **Identifies musically significant repeated motifs** automatically
+- **Advanced scoring**: frequency + length + melodic interest + rhythm variety
+- **Approximate matching**: finds similar patterns with variations (edit distance)
+- **Transposition-invariant**: uses interval sequences, works in any key
+- **Top-N extraction**: can find multiple best motifs, ranked by score
+- Exports motifs as separate MIDI files
+- Useful for finding themes, hooks, riffs, and recurring melodies
 
 ## Technology
 
