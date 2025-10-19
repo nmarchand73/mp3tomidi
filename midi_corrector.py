@@ -30,23 +30,29 @@ class MidiCorrector:
     NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
     
     def __init__(self, 
-                 min_note_duration_ms: float = 50.0,
+                 min_note_duration_ms: float = 100.0,
                  min_velocity: int = 15,
                  min_note: int = MIN_PIANO_NOTE,
-                 max_note: int = MAX_PIANO_NOTE):
+                 max_note: int = MAX_PIANO_NOTE,
+                 quantize: bool = False,
+                 quantize_resolution: int = 16):
         """
         Initialize the corrector.
         
         Args:
-            min_note_duration_ms: Minimum note duration in milliseconds (default: 50ms)
+            min_note_duration_ms: Minimum note duration in milliseconds (default: 100ms)
             min_velocity: Minimum note velocity (default: 15)
             min_note: Minimum MIDI note number (default: 21 = A0)
             max_note: Maximum MIDI note number (default: 108 = C8)
+            quantize: Apply rhythmic quantization (default: False)
+            quantize_resolution: Quantization resolution in ticks (16 = 16th notes, default: 16)
         """
         self.min_note_duration_ms = min_note_duration_ms
         self.min_velocity = min_velocity
         self.min_note = min_note
         self.max_note = max_note
+        self.quantize = quantize
+        self.quantize_resolution = quantize_resolution
         
         self.stats = {
             'total_notes': 0,
@@ -74,9 +80,16 @@ class MidiCorrector:
             'removed_short': 0,
             'removed_quiet': 0,
             'removed_range': 0,
+            'extended_notes': 0,
+            'quantized_notes': 0,
             'out_of_key': 0,
-            'detected_key': None
+            'detected_key': None,
+            'detected_tempo': None
         }
+        
+        # Extract tempo from MIDI file
+        tempo = self._extract_tempo(midi_file)
+        self.stats['detected_tempo'] = round(60000000 / tempo) if tempo else 120
         
         # Extract notes from all tracks
         all_notes = self._extract_notes(midi_file)
@@ -93,9 +106,18 @@ class MidiCorrector:
         
         if verbose:
             print(f"\n  Detected key: {self.stats['detected_key']}")
+            print(f"  Detected tempo: {self.stats['detected_tempo']} BPM")
         
-        # Filter notes
-        filtered_notes = self._filter_notes(all_notes, midi_file.ticks_per_beat)
+        # Filter and extend notes
+        filtered_notes = self._filter_and_extend_notes(
+            all_notes, 
+            midi_file.ticks_per_beat, 
+            tempo
+        )
+        
+        # Apply quantization if requested
+        if self.quantize:
+            filtered_notes = self._quantize_notes(filtered_notes, midi_file.ticks_per_beat)
         
         # Flag out-of-key notes
         out_of_key_notes = self._flag_out_of_key(filtered_notes, key_root, key_mode)
@@ -108,6 +130,19 @@ class MidiCorrector:
             self._print_statistics()
         
         return corrected_midi
+    
+    def _extract_tempo(self, midi_file: mido.MidiFile) -> int:
+        """
+        Extract tempo from MIDI file.
+        
+        Returns:
+            Tempo in microseconds per beat (default: 500000 = 120 BPM)
+        """
+        for track in midi_file.tracks:
+            for msg in track:
+                if msg.type == 'set_tempo':
+                    return msg.tempo
+        return 500000  # Default: 120 BPM
     
     def _extract_notes(self, midi_file: mido.MidiFile) -> List[Dict]:
         """Extract all notes with timing information."""
@@ -140,22 +175,31 @@ class MidiCorrector:
         
         return notes
     
-    def _filter_notes(self, notes: List[Dict], ticks_per_beat: int) -> List[Dict]:
-        """Filter out notes based on duration, velocity, and range."""
+    def _filter_and_extend_notes(self, notes: List[Dict], ticks_per_beat: int, 
+                                  tempo: int) -> List[Dict]:
+        """
+        Filter notes based on duration, velocity, range AND extend very short notes.
+        
+        Strategy:
+        - Very short notes (<50ms): Remove (likely transcription errors)
+        - Short notes (50-min_duration): Extend to minimum duration
+        - Normal notes: Keep as is
+        """
         filtered = []
         
-        # Convert minimum duration from ms to ticks
-        # Assuming 120 BPM (500ms per beat)
-        ms_per_tick = 500.0 / ticks_per_beat
-        min_duration_ticks = self.min_note_duration_ms / ms_per_tick
+        # Convert durations from ms to ticks using actual tempo
+        ms_per_beat = tempo / 1000.0  # Convert microseconds to milliseconds
+        ms_per_tick = ms_per_beat / ticks_per_beat
         
-        for note in notes:
-            # Check duration
-            if note['duration_ticks'] < min_duration_ticks:
-                self.stats['removed_short'] += 1
-                continue
-            
-            # Check velocity
+        min_duration_ticks = self.min_note_duration_ms / ms_per_tick
+        # Very short threshold: notes shorter than 50ms are likely errors
+        very_short_threshold_ticks = 50.0 / ms_per_tick
+        
+        # Sort notes by start time for better extension logic
+        sorted_notes = sorted(notes, key=lambda n: n['start_time'])
+        
+        for i, note in enumerate(sorted_notes):
+            # Check velocity first
             if note['velocity'] < self.min_velocity:
                 self.stats['removed_quiet'] += 1
                 continue
@@ -165,9 +209,51 @@ class MidiCorrector:
                 self.stats['removed_range'] += 1
                 continue
             
+            # Handle duration
+            if note['duration_ticks'] < very_short_threshold_ticks:
+                # Remove very short notes (likely errors)
+                self.stats['removed_short'] += 1
+                continue
+            elif note['duration_ticks'] < min_duration_ticks:
+                # Extend short notes to minimum duration
+                old_duration = note['duration_ticks']
+                note['duration_ticks'] = min_duration_ticks
+                note['end_time'] = note['start_time'] + min_duration_ticks
+                self.stats['extended_notes'] += 1
+            
             filtered.append(note)
         
         return filtered
+    
+    def _quantize_notes(self, notes: List[Dict], ticks_per_beat: int) -> List[Dict]:
+        """
+        Apply rhythmic quantization to notes.
+        
+        Quantizes start times to the nearest grid position based on quantize_resolution.
+        Uses partial quantization (50%) to preserve some human feel.
+        """
+        quantized = []
+        
+        # Calculate quantization grid size
+        # For 16th notes: ticks_per_beat / 4
+        # For 8th notes: ticks_per_beat / 2
+        grid_size = ticks_per_beat / (self.quantize_resolution / 4)
+        
+        for note in notes:
+            # Quantize start time (50% quantization for natural feel)
+            original_start = note['start_time']
+            nearest_grid = round(original_start / grid_size) * grid_size
+            quantized_start = original_start + 0.5 * (nearest_grid - original_start)
+            
+            # Update times
+            duration = note['duration_ticks']
+            note['start_time'] = int(quantized_start)
+            note['end_time'] = int(quantized_start + duration)
+            
+            quantized.append(note)
+            self.stats['quantized_notes'] += 1
+        
+        return quantized
     
     def _detect_key(self, notes: List[Dict]) -> Tuple[int, str]:
         """
@@ -333,9 +419,13 @@ class MidiCorrector:
         """Print correction statistics."""
         print("\n  Correction Statistics:")
         print(f"    Total notes: {self.stats['total_notes']}")
-        print(f"    Removed (too short): {self.stats['removed_short']}")
+        print(f"    Removed (too short <50ms): {self.stats['removed_short']}")
+        print(f"    Extended (50-{int(self.min_note_duration_ms)}ms): {self.stats['extended_notes']}")
         print(f"    Removed (too quiet): {self.stats['removed_quiet']}")
         print(f"    Removed (out of range): {self.stats['removed_range']}")
+        
+        if self.quantize and self.stats['quantized_notes'] > 0:
+            print(f"    Quantized: {self.stats['quantized_notes']}")
         
         total_removed = (self.stats['removed_short'] + 
                         self.stats['removed_quiet'] + 
