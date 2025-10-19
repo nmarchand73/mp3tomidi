@@ -224,7 +224,7 @@ Notes:
             if separator.demucs_available:
                 audio_to_transcribe = separator.separate_piano(
                     audio_file=args.input,
-                    output_dir=temp_dir,
+                    output_dir=str(audio_dir),
                     verbose=args.verbose
                 )
                 separation_performed = (audio_to_transcribe != args.input)
