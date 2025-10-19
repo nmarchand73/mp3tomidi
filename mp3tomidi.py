@@ -428,6 +428,17 @@ Notes:
         if args.verbose:
             print(f"  - Saved to: {args.output}")
         
+        # Step 7: Evaluate quality (optional)
+        if args.evaluate_quality:
+            print(f"\n[BONUS] Evaluating transcription quality...")
+            evaluator = TranscriptionEvaluator(sr=22050)
+            
+            quality_metrics = evaluator.evaluate(
+                audio_to_transcribe,
+                separated_midi,
+                verbose=True
+            )
+        
         # Clean up temp files unless requested to keep
         if not args.keep_temp:
             try:
@@ -448,8 +459,10 @@ Notes:
                 print(f"  - Intermediate MIDI saved to: {temp_output}")
         
         print(f"\n✓ Conversion complete! Output saved to: {args.output}")
-        print(f"  Track 0: Right Hand")
-        print(f"  Track 1: Left Hand")
+        
+        if not args.no_hand_separation:
+            print(f"  Track 0: Right Hand")
+            print(f"  Track 1: Left Hand")
         
         if args.extract_phrases and phrase_results:
             print(f"\n✓ Extracted {len(phrase_results)} musical phrase(s):")
