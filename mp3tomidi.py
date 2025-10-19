@@ -21,6 +21,7 @@ from audio_separator import AudioSeparator
 from motif_extractor_v2 import MusicalPhraseDetector
 from audio_midi_aligner import AudioMidiAligner
 from spectral_transcriber import SpectralTranscriber
+from transcription_evaluator import TranscriptionEvaluator
 import mido
 
 
@@ -86,6 +87,12 @@ Notes:
         '--use-spectral',
         action='store_true',
         help='Use CQT spectral analysis instead of neural network (experimental, may be more accurate)'
+    )
+    
+    parser.add_argument(
+        '--evaluate-quality',
+        action='store_true',
+        help='Evaluate transcription quality against original audio (spectral analysis)'
     )
     
     parser.add_argument(
