@@ -130,21 +130,21 @@ Notes:
     parser.add_argument(
         '--extract-phrases',
         action='store_true',
-        help='Extract repeated musical phrases (6-14 notes) to separate MIDI files'
+        help='Extract musical phrases (8-20 notes) to separate MIDI files'
     )
     
     parser.add_argument(
         '--phrase-min-length',
         type=int,
-        default=12,
-        help='Minimum phrase length in notes (default: 12)'
+        default=8,
+        help='Minimum phrase length in notes (default: 8)'
     )
     
     parser.add_argument(
         '--phrase-max-length',
         type=int,
-        default=24,
-        help='Maximum phrase length in notes (default: 24)'
+        default=20,
+        help='Maximum phrase length in notes (default: 20)'
     )
     
     parser.add_argument(

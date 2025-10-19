@@ -266,9 +266,9 @@ class MusicalPhraseDetector:
         """
         Score a musical phrase based on multiple factors.
         
-        Emphasizes phrase completeness and musical coherence:
+        Balanced scoring for phrases (8-20 notes):
         - Frequency (how often it repeats)
-        - Length (complete phrases are 7-12 notes)
+        - Length (meaningful phrases are 8-20 notes)
         - Melodic contour (balanced stepwise motion and leaps)
         - Rhythmic variety (phrases have rhythmic structure)
         - Pitch range (phrases span a meaningful range)
@@ -287,23 +287,23 @@ class MusicalPhraseDetector:
         # Frequency score (logarithmic to avoid dominating other factors)
         freq_score = np.log1p(frequency) * 2.0
         
-        # Length score (prefer complete musical phrases: 12-24 notes)
+        # Length score (prefer meaningful phrases: 8-20 notes)
         length = len(intervals) + 1
-        optimal_length = 16  # Typical complete phrase in popular music (2-4 bars)
+        optimal_length = 12  # Typical phrase in music (1-2 bars)
         
-        # Strong penalty for fragments (not real phrases)
-        if length < 10:
-            length_penalty = -10.0  # Reject short fragments
-        elif length < 12:
-            length_penalty = -5.0   # Strongly discourage incomplete phrases
+        # Penalty for very short fragments
+        if length < 6:
+            length_penalty = -8.0   # Reject tiny fragments
+        elif length < 8:
+            length_penalty = -3.0   # Discourage very short patterns
         else:
             length_penalty = 0.0    # Accept phrase-length patterns
         
-        # Strong bonus for complete phrases (12-24 notes = 1-2 musical phrases)
-        if 14 <= length <= 20:
-            length_bonus = 3.0  # Very strong bonus for complete phrases
-        elif 12 <= length <= 24:
-            length_bonus = 2.0  # Good bonus for phrase-length patterns
+        # Bonus for good phrase lengths (8-20 notes)
+        if 10 <= length <= 16:
+            length_bonus = 3.0  # Strong bonus for ideal phrases
+        elif 8 <= length <= 20:
+            length_bonus = 1.5  # Good bonus for reasonable phrases
         else:
             length_bonus = 0.0
         
