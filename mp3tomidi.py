@@ -19,7 +19,6 @@ from hand_separator import HandSeparator
 from midi_corrector import MidiCorrector
 from audio_separator import AudioSeparator
 from motif_extractor_v2 import MusicalPhraseDetector
-from transcription_evaluator import TranscriptionEvaluator
 import mido
 
 
@@ -73,12 +72,6 @@ Notes:
         '--no-hand-separation',
         action='store_true',
         help='Disable hand separation (output single track with all notes)'
-    )
-    
-    parser.add_argument(
-        '--evaluate-quality',
-        action='store_true',
-        help='Evaluate transcription quality against original audio (spectral analysis)'
     )
     
     parser.add_argument(
@@ -375,17 +368,6 @@ Notes:
         
         if args.verbose:
             print(f"  - Saved to: {args.output}")
-        
-        # Step 7: Evaluate quality (optional)
-        if args.evaluate_quality:
-            print(f"\n[BONUS] Evaluating transcription quality...")
-            evaluator = TranscriptionEvaluator(sr=22050)
-            
-            quality_metrics = evaluator.evaluate(
-                audio_to_transcribe,
-                separated_midi,
-                verbose=True
-            )
         
         # Clean up temp files unless requested to keep
         if not args.keep_temp:

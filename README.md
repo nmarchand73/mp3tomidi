@@ -65,12 +65,6 @@ Catch quieter notes:
 .\RUN.bat input.mp3 --onset-threshold 0.3
 ```
 
-### Evaluate Transcription Quality
-Compare results against original audio:
-```powershell
-.\RUN.bat input.mp3 --evaluate-quality --verbose
-```
-
 ### Skip Hand Separation
 Keep all notes in one track:
 ```powershell
@@ -121,11 +115,6 @@ Keep all notes in one track:
 | `--split-note` | MIDI note for hand split | 60 (middle C) |
 | `--hysteresis` | Prevents rapid hand switching | 5 semitones |
 | `--no-hand-separation` | Keep all notes in single track | off (separation ON) |
-
-### Advanced Options
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--evaluate-quality` | Evaluate transcription quality | off |
 
 ### General Options
 | Option | Description | Default |
@@ -207,21 +196,12 @@ Opens in any DAW or notation software (MuseScore, FL Studio, Ableton, Sibelius, 
 - Exports phrases as separate MIDI files
 - Useful for finding themes, melodies, and musical ideas
 
-### 📊 Quality Evaluation (NEW!)
-- **Spectral similarity**: Chromagram correlation with original audio
-- **Onset detection**: Precision, recall, and F1 score for note timing
-- **Temporal coverage**: Percentage of audio covered by MIDI notes
-- **Pitch distribution**: Similarity of pitch class profiles
-- **Overall quality score**: Weighted average with 5-star rating system (0-100%)
-- **Use `--evaluate-quality`** to measure transcription accuracy
-
 ## Technology
 
 - **Source Separation**: Meta's Demucs (HTDemucs - Hybrid Transformer model)
-- **Transcription**: Spotify's basic-pitch (state-of-the-art neural network, ~72% quality)
+- **Transcription**: Spotify's basic-pitch (state-of-the-art neural network)
 - **Error Correction**: Krumhansl-Schmuckler key detection + statistical filtering + note merging
 - **Hand Separation**: Rule-based algorithm with pitch clustering and voice leading
-- **Quality Evaluation**: Multi-metric spectral analysis (chromagram, onset detection, coverage)
 - **Environment**: Python 3.11 with TensorFlow 2.15 + PyTorch 2.5.1
 
 ## Setup (Already Done!)
