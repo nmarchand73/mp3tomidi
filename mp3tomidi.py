@@ -157,8 +157,15 @@ Notes:
     parser.add_argument(
         '--phrase-similarity',
         type=float,
-        default=0.8,
-        help='Similarity threshold for approximate matching 0-1 (default: 0.8)'
+        default=0.75,
+        help='Similarity threshold for approximate matching 0-1 (default: 0.75)'
+    )
+    
+    parser.add_argument(
+        '--phrase-min-frequency',
+        type=int,
+        default=1,
+        help='Minimum repetitions required for a phrase (default: 1)'
     )
     
     args = parser.parse_args()
@@ -286,6 +293,7 @@ Notes:
             detector = MusicalPhraseDetector(
                 min_phrase_length=args.phrase_min_length,
                 max_phrase_length=args.phrase_max_length,
+                min_frequency=args.phrase_min_frequency,
                 similarity_threshold=args.phrase_similarity
             )
             

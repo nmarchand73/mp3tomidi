@@ -67,21 +67,21 @@ class MusicalPhraseDetector:
     - Musical significance scoring with emphasis on phrase completeness
     """
     
-    def __init__(self, 
-                 min_phrase_length: int = 12,
-                 max_phrase_length: int = 24,
-                 min_frequency: int = 2,
+    def __init__(self,
+                 min_phrase_length: int = 8,
+                 max_phrase_length: int = 20,
+                 min_frequency: int = 1,
                  allow_transposition: bool = True,
-                 similarity_threshold: float = 0.8):
+                 similarity_threshold: float = 0.75):
         """
         Initialize the musical phrase detector.
-        
+
         Args:
-            min_phrase_length: Minimum number of notes in a phrase (default: 12)
-            max_phrase_length: Maximum number of notes in a phrase (default: 24)
-            min_frequency: Minimum times a phrase must repeat (default: 2)
+            min_phrase_length: Minimum number of notes in a phrase (default: 8)
+            max_phrase_length: Maximum number of notes in a phrase (default: 20)
+            min_frequency: Minimum times a phrase must repeat (default: 1)
             allow_transposition: Allow transposed versions of patterns
-            similarity_threshold: Threshold for approximate matching (0-1)
+            similarity_threshold: Threshold for approximate matching (0-1, default: 0.75)
         """
         self.min_phrase_length = min_phrase_length
         self.max_phrase_length = max_phrase_length

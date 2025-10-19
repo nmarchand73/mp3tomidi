@@ -86,9 +86,10 @@ Catch quieter notes:
 |--------|-------------|---------|
 | `--extract-phrases` | Extract repeated musical phrases | off |
 | `--phrase-count` | Number of top phrases to extract | 1 |
-| `--phrase-min-length` | Minimum notes in phrase | 12 |
-| `--phrase-max-length` | Maximum notes in phrase | 24 |
-| `--phrase-similarity` | Similarity threshold for matching (0-1) | 0.8 |
+| `--phrase-min-length` | Minimum notes in phrase | 8 |
+| `--phrase-max-length` | Maximum notes in phrase | 20 |
+| `--phrase-min-frequency` | Minimum repetitions required | 1 |
+| `--phrase-similarity` | Similarity threshold for matching (0-1) | 0.75 |
 
 ### Error Correction Options
 | Option | Description | Default |
@@ -171,14 +172,15 @@ Opens in any DAW or notation software (MuseScore, FL Studio, Ableton, Sibelius, 
 - Configurable split point and hysteresis
 
 ### 🎼 Musical Phrase Detection (NEW!)
-- **Identifies complete melodic phrases** (12-24 notes) automatically
-- **Full musical statements**: detects entire phrases spanning 1-2 bars
-- **Advanced scoring**: frequency + phrase completeness + melodic coherence + rhythm
+- **Identifies melodic phrases** (8-20 notes) automatically
+- **Musical statements**: detects meaningful phrases spanning 1-2 bars
+- **Smart scoring**: frequency + length + melodic interest + rhythm
 - **Approximate matching**: finds similar phrases with variations (edit distance)
 - **Transposition-invariant**: uses interval sequences, works in any key
 - **Top-N extraction**: can find multiple best phrases, ranked by score
+- **Flexible detection**: finds both repeated and unique significant phrases
 - Exports phrases as separate MIDI files
-- Useful for finding recurring themes, verse/chorus melodies, and complete musical ideas
+- Useful for finding themes, melodies, and musical ideas
 
 ## Technology
 
