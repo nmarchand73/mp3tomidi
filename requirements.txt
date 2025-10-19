@@ -1,0 +1,7 @@
+# MP3 to MIDI Converter Dependencies
+# Requires Python 3.9, 3.10, or 3.11
+
+basic-pitch
+mido
+librosa
+soundfile

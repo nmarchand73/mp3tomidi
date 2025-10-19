@@ -1,0 +1,218 @@
+"""
+MP3 to MIDI Converter with Hand Separation
+
+A command-line tool that converts MP3 piano recordings to MIDI files
+with separate left and right hand tracks.
+
+Uses Spotify's basic-pitch for audio-to-MIDI transcription and a rule-based
+algorithm for hand separation.
+"""
+
+import argparse
+import os
+import sys
+import tempfile
+from pathlib import Path
+
+from transcribe import AudioTranscriber
+from hand_separator import HandSeparator
+import mido
+
+
+def main():
+    """Main entry point for the CLI."""
+    parser = argparse.ArgumentParser(
+        description='Convert MP3 piano recordings to MIDI with separate left and right hand tracks',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s input.mp3
+  %(prog)s input.mp3 -o output.mid
+  %(prog)s input.mp3 -o output.mid --split-note 64 --verbose
+  %(prog)s input.wav -o piano.mid --onset-threshold 0.6
+
+Notes:
+  - Input can be MP3, WAV, FLAC, or other audio formats
+  - Output MIDI will have 2 tracks: Track 0 (Right Hand), Track 1 (Left Hand)
+  - Default split point is MIDI note 60 (middle C)
+        """
+    )
+    
+    # Required arguments
+    parser.add_argument(
+        'input',
+        help='Input audio file (MP3, WAV, FLAC, etc.)'
+    )
+    
+    # Optional arguments
+    parser.add_argument(
+        '-o', '--output',
+        help='Output MIDI file path (default: output/<input_name>_separated.mid)',
+        default=None
+    )
+    
+    parser.add_argument(
+        '--split-note',
+        type=int,
+        default=60,
+        help='MIDI note number to use as split point between hands (default: 60 = middle C)'
+    )
+    
+    parser.add_argument(
+        '--hysteresis',
+        type=int,
+        default=5,
+        help='Hysteresis in semitones to prevent rapid hand switching (default: 5)'
+    )
+    
+    parser.add_argument(
+        '--onset-threshold',
+        type=float,
+        default=0.5,
+        help='Note onset detection threshold 0-1, higher = stricter (default: 0.5)'
+    )
+    
+    parser.add_argument(
+        '--frame-threshold',
+        type=float,
+        default=0.3,
+        help='Note frame detection threshold 0-1, higher = stricter (default: 0.3)'
+    )
+    
+    parser.add_argument(
+        '--min-note-length',
+        type=float,
+        default=127.70,
+        help='Minimum note length in milliseconds (default: 127.70)'
+    )
+    
+    parser.add_argument(
+        '-v', '--verbose',
+        action='store_true',
+        help='Enable verbose output'
+    )
+    
+    parser.add_argument(
+        '--keep-temp',
+        action='store_true',
+        help='Keep temporary transcribed MIDI file (before hand separation)'
+    )
+    
+    args = parser.parse_args()
+    
+    # Validate input file
+    if not os.path.exists(args.input):
+        print(f"Error: Input file not found: {args.input}", file=sys.stderr)
+        sys.exit(1)
+    
+    # Create output directory if it doesn't exist
+    output_dir = Path("output")
+    output_dir.mkdir(exist_ok=True)
+    
+    # Determine output path
+    if args.output is None:
+        input_path = Path(args.input)
+        args.output = output_dir / f"{input_path.stem}_separated.mid"
+    else:
+        args.output = Path(args.output)
+        # Ensure output directory exists for custom paths
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+    
+    # Convert to string for consistency
+    args.output = str(args.output)
+    
+    if args.verbose:
+        print("="*60)
+        print("MP3 to MIDI Converter with Hand Separation")
+        print("="*60)
+        print(f"Input file: {args.input}")
+        print(f"Output file: {args.output}")
+        print(f"Split note: {args.split_note} (MIDI)")
+        print(f"Hysteresis: {args.hysteresis} semitones")
+        print(f"Onset threshold: {args.onset_threshold}")
+        print(f"Frame threshold: {args.frame_threshold}")
+        print("="*60)
+    
+    try:
+        # Step 1: Transcribe audio to MIDI
+        print("\n[1/3] Transcribing audio to MIDI...")
+        transcriber = AudioTranscriber()
+        
+        # Use temp directory for intermediate MIDI file
+        temp_dir = tempfile.gettempdir()
+        
+        transcribed_midi_path = transcriber.transcribe(
+            audio_file=args.input,
+            output_dir=temp_dir,
+            onset_threshold=args.onset_threshold,
+            frame_threshold=args.frame_threshold,
+            minimum_note_length=args.min_note_length
+        )
+        
+        if args.verbose:
+            midi_file = mido.MidiFile(transcribed_midi_path)
+            info = transcriber.get_midi_info(midi_file)
+            print(f"  - Transcribed {info['total_notes']} notes")
+            print(f"  - Pitch range: {info['pitch_range'][0]} - {info['pitch_range'][1]}")
+            print(f"  - Ticks per beat: {info['ticks_per_beat']}")
+        
+        # Step 2: Separate hands
+        print("\n[2/3] Separating left and right hand parts...")
+        separator = HandSeparator(
+            split_note=args.split_note,
+            hysteresis=args.hysteresis
+        )
+        
+        # Load the transcribed MIDI
+        transcribed_midi = mido.MidiFile(transcribed_midi_path)
+        
+        # Perform hand separation
+        separated_midi = separator.separate(transcribed_midi)
+        
+        if args.verbose:
+            # Count notes in each track
+            right_notes = 0
+            left_notes = 0
+            for i, track in enumerate(separated_midi.tracks):
+                note_count = sum(1 for msg in track if msg.type == 'note_on' and msg.velocity > 0)
+                if i == 0:
+                    right_notes = note_count
+                elif i == 1:
+                    left_notes = note_count
+            print(f"  - Right hand: {right_notes} notes")
+            print(f"  - Left hand: {left_notes} notes")
+        
+        # Step 3: Save output
+        print("\n[3/3] Saving output MIDI file...")
+        separated_midi.save(args.output)
+        
+        if args.verbose:
+            print(f"  - Saved to: {args.output}")
+        
+        # Clean up temp file unless requested to keep
+        if not args.keep_temp:
+            try:
+                os.remove(transcribed_midi_path)
+            except:
+                pass
+        else:
+            temp_output = f"{output_path.stem}_transcribed.mid"
+            os.rename(transcribed_midi_path, temp_output)
+            if args.verbose:
+                print(f"  - Intermediate MIDI saved to: {temp_output}")
+        
+        print(f"\n✓ Conversion complete! Output saved to: {args.output}")
+        print(f"  Track 0: Right Hand")
+        print(f"  Track 1: Left Hand")
+        
+    except Exception as e:
+        print(f"\n✗ Error: {str(e)}", file=sys.stderr)
+        if args.verbose:
+            import traceback
+            traceback.print_exc()
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()
+
