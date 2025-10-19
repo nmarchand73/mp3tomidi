@@ -133,6 +133,8 @@ class MusicalPhraseDetector:
         Find exact repeated musical phrases using interval sequences.
         Intervals are transposition-invariant.
         
+        OPTIMIZED: Uses sampling for very long pieces.
+        
         Args:
             notes: List of Note objects
             
@@ -141,9 +143,16 @@ class MusicalPhraseDetector:
         """
         patterns = Counter()
         
+        # Optimization: if too many notes, sample every N positions
+        total_notes = len(notes)
+        if total_notes > 500:
+            step = 2  # Sample every 2 positions for speed
+        else:
+            step = 1  # Check every position for small pieces
+        
         for length in range(self.min_phrase_length, 
-                          min(self.max_phrase_length + 1, len(notes))):
-            for i in range(len(notes) - length + 1):
+                          min(self.max_phrase_length + 1, total_notes)):
+            for i in range(0, total_notes - length + 1, step):
                 segment = notes[i:i + length]
                 
                 # Create interval pattern (pitch differences)
@@ -198,6 +207,8 @@ class MusicalPhraseDetector:
         Find approximately repeated patterns using edit distance.
         Groups similar patterns together.
         
+        OPTIMIZED: Only processes most frequent patterns first.
+        
         Args:
             notes: List of Note objects
             
@@ -207,11 +218,18 @@ class MusicalPhraseDetector:
         # First get exact patterns
         exact_patterns = self.find_exact_patterns(notes)
         
+        # OPTIMIZATION: Only process top patterns by frequency
+        # Sort by frequency and take top candidates
+        if len(exact_patterns) > 100:
+            # Only process top 100 most frequent patterns for speed
+            sorted_patterns = exact_patterns.most_common(100)
+            exact_patterns = Counter(dict(sorted_patterns))
+        
         # Group similar patterns
         pattern_groups = []
         processed = set()
         
-        for pattern1, count1 in exact_patterns.items():
+        for pattern1, count1 in exact_patterns.most_common():
             if pattern1 in processed:
                 continue
             
@@ -221,6 +239,7 @@ class MusicalPhraseDetector:
             
             intervals1, rhythm1, _ = pattern1
             
+            # Only compare with remaining unprocessed patterns
             for pattern2, count2 in exact_patterns.items():
                 if pattern2 in processed:
                     continue
@@ -478,6 +497,9 @@ class MusicalPhraseDetector:
         Returns:
             List of dictionaries with phrase info
         """
+        if verbose:
+            print("  Analyzing note patterns (this may take a moment for long pieces)...")
+        
         phrases = self.get_best_phrases(midi_file, top_n=top_n)
         
         if not phrases:
