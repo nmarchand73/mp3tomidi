@@ -96,8 +96,10 @@ Catch quieter notes:
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--no-correction` | Skip error correction | off |
-| `--min-note-duration` | Min note length in ms | 50 |
+| `--min-note-duration` | Min note length in ms | 120 |
 | `--min-velocity` | Min note velocity (0-127) | 15 |
+| `--no-quantize` | Disable rhythmic quantization | off (quantize ON) |
+| `--quantize-resolution` | Quantization: 4/8/16/32 notes | 16 |
 
 ### Hand Separation Options
 | Option | Description | Default |
