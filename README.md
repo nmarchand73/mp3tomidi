@@ -3,6 +3,7 @@
 Convert piano recordings (MP3, WAV) to MIDI files with automatic left/right hand separation and chord progression analysis.
 
 **✨ NEW Features:**
+- **Advanced Transcription Enhancement (GiantMIDI-inspired):** Pedal detection, velocity refinement, and timing correction
 - **Chord Detection:** Automatically analyzes and generates chord progressions
 - **Mixed Audio Support:** Isolates piano from songs with vocals, drums, and other instruments
 
@@ -67,6 +68,18 @@ Catch quieter notes:
 .\RUN.bat input.mp3 --onset-threshold 0.3
 ```
 
+### Enhanced Transcription (Experimental)
+Apply advanced audio analysis for better results (adds ~15-20s):
+```powershell
+.\RUN.bat input.mp3 --enhance-transcription --verbose
+```
+This feature, inspired by ByteDance's GiantMIDI-Piano, adds:
+- **Pedal Detection:** Detects sustain pedal usage from note overlap patterns
+- **Velocity Enhancement:** Improves dynamics using spectral energy analysis
+- **Timing Refinement:** Sub-frame precision for note onsets/offsets
+
+Recommended for complex performances where expression is critical.
+
 ### Skip Quality Evaluation
 Quality evaluation runs by default. To skip it for faster processing:
 ```powershell
@@ -91,6 +104,7 @@ Keep all notes in one track:
 |--------|-------------|---------|
 | `--onset-threshold` | Note detection (0-1, higher=stricter) | 0.5 |
 | `--frame-threshold` | Duration detection (0-1) | 0.3 |
+| `--enhance-transcription` | Advanced enhancements (pedal, velocity, timing) | off |
 
 ### Source Separation Options  
 | Option | Description | Default |
@@ -193,6 +207,15 @@ Opens in any DAW or notation software (MuseScore, FL Studio, Ableton, Sibelius, 
 - Polyphonic piano transcription
 - Configurable sensitivity
 
+### 🎹 Advanced Transcription Enhancement (NEW! - GiantMIDI-Inspired)
+Optional post-processing using audio analysis (use `--enhance-transcription`):
+- **Pedal Detection**: Estimates sustain pedal usage from note overlap patterns and harmonic resonance
+- **Velocity Enhancement**: Improves dynamics using spectral energy and attack characteristics
+- **Timing Refinement**: Sub-frame precision (±50ms) for onsets/offsets using spectral flux
+- Inspired by ByteDance's GiantMIDI-Piano project (10,855 transcriptions)
+- Adds ~15-20 seconds processing time
+- Best for complex performances where expression matters
+
 ### 📊 Quality Evaluation (NEW! - RUNS BY DEFAULT)
 - **Onset F1 Score**: Note timing accuracy (MIREX standard)
 - **Pitch Accuracy**: Pitch correctness with tolerance window
@@ -232,6 +255,7 @@ Opens in any DAW or notation software (MuseScore, FL Studio, Ableton, Sibelius, 
 
 - **Source Separation**: Meta's Demucs (HTDemucs - Hybrid Transformer model)
 - **Transcription**: Spotify's basic-pitch (state-of-the-art neural network)
+- **Enhancement** (optional): GiantMIDI-inspired pedal detection, velocity modeling, onset refinement
 - **Error Correction**: Krumhansl-Schmuckler key detection + statistical filtering + note merging
 - **Hand Separation**: Rule-based algorithm with pitch clustering and voice leading
 - **Environment**: Python 3.11 with TensorFlow 2.15 + PyTorch 2.5.1

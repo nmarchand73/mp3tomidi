@@ -22,6 +22,9 @@ from motif_extractor_v2 import MusicalPhraseDetector
 from quality_evaluator import QualityEvaluator
 from chord_detector import ChordDetector
 from chord_generator import ChordGenerator
+from pedal_detector import PedalDetector
+from velocity_enhancer import VelocityEnhancer
+from onset_refiner import OnsetRefiner
 import mido
 
 
@@ -238,6 +241,13 @@ Notes:
         help='Chord voicing style for generated MIDI (default: block)'
     )
 
+    # Enhancement arguments (GiantMIDI-inspired)
+    parser.add_argument(
+        '--enhance-transcription',
+        action='store_true',
+        help='Apply advanced enhancements: pedal detection, velocity refinement, timing correction (adds ~15-20s)'
+    )
+
     args = parser.parse_args()
     
     # Validate input file
@@ -363,8 +373,65 @@ Notes:
                 rating = "Poor"
             print(f"  Rating: {rating}\n")
         
-        # Step 3: Error correction
+        # Step 2.6: Advanced transcription enhancement (optional)
         transcribed_midi = mido.MidiFile(transcribed_midi_path)
+        
+        if args.enhance_transcription:
+            print("\n[2.6/5] Enhancing transcription (pedal, velocity, timing)...")
+            
+            # Pedal detection
+            if args.verbose:
+                print("  → Detecting sustain pedal patterns...")
+            pedal_detector = PedalDetector(
+                overlap_threshold=4,
+                min_pedal_duration=0.5
+            )
+            pedal_events = pedal_detector.detect_pedal(
+                transcribed_midi, 
+                audio_to_transcribe,
+                verbose=args.verbose
+            )
+            transcribed_midi = pedal_detector.add_pedal_to_midi(
+                transcribed_midi, 
+                pedal_events
+            )
+            
+            if args.verbose or len(pedal_events) > 0:
+                pedal_count = sum(1 for _, down in pedal_events if down)
+                print(f"  ✓ Added {pedal_count} pedal events")
+            
+            # Velocity enhancement
+            if args.verbose:
+                print("  → Enhancing velocity dynamics...")
+            velocity_enhancer = VelocityEnhancer(
+                min_velocity=30,
+                max_velocity=120
+            )
+            transcribed_midi = velocity_enhancer.enhance_velocities(
+                transcribed_midi, 
+                audio_to_transcribe,
+                verbose=args.verbose
+            )
+            
+            # Onset/offset refinement
+            if args.verbose:
+                print("  → Refining note timing...")
+            onset_refiner = OnsetRefiner(
+                onset_tolerance_ms=50.0,
+                offset_tolerance_ms=100.0
+            )
+            transcribed_midi = onset_refiner.refine_timing(
+                transcribed_midi, 
+                audio_to_transcribe,
+                verbose=args.verbose
+            )
+            
+            # Save enhanced MIDI for next steps
+            transcribed_midi.save(transcribed_midi_path)
+        
+        # Step 3: Error correction
+        if not transcribed_midi:
+            transcribed_midi = mido.MidiFile(transcribed_midi_path)
         
         if not args.no_correction:
             print("\n[3/5] Correcting errors...")
