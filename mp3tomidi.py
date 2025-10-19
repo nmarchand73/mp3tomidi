@@ -48,7 +48,7 @@ Notes:
     # Optional arguments
     parser.add_argument(
         '-o', '--output',
-        help='Output MIDI file path (default: output/<input_name>_separated.mid)',
+        help='Output MIDI file path (default: output/<input_name>.mid)',
         default=None
     )
     
@@ -133,7 +133,7 @@ Notes:
     # Determine output path
     if args.output is None:
         input_path = Path(args.input)
-        args.output = output_dir / f"{input_path.stem}_separated.mid"
+        args.output = output_dir / f"{input_path.stem}.mid"
     else:
         args.output = Path(args.output)
         # Ensure output directory exists for custom paths

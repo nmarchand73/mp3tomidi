@@ -22,7 +22,7 @@ C:\Users\nmarc\miniconda3\envs\mp3tomidi\python.exe mp3tomidi.py "input\A Forest
 ```powershell
 C:\Users\nmarc\miniconda3\envs\mp3tomidi\python.exe mp3tomidi.py input.mp3
 ```
-Creates `output/input_separated.mid` with 2 tracks (right hand + left hand).
+Creates `output/input.mid` with 2 tracks (right hand + left hand).
 
 ## Common Adjustments
 
