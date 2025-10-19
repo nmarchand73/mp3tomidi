@@ -19,6 +19,7 @@ from hand_separator import HandSeparator
 from midi_corrector import MidiCorrector
 from audio_separator import AudioSeparator
 from motif_extractor_v2 import MusicalPhraseDetector
+from audio_midi_aligner import AudioMidiAligner
 import mido
 
 
