@@ -297,9 +297,11 @@ Notes:
                 similarity_threshold=args.phrase_similarity
             )
             
-            # Create phrase output path
+            # Create phrase output path in phrases subfolder
             output_path_obj = Path(args.output)
-            phrase_output = output_path_obj.parent / f"{output_path_obj.stem}_phrase.mid"
+            phrases_dir = output_path_obj.parent.parent / "phrases"
+            phrases_dir.mkdir(parents=True, exist_ok=True)
+            phrase_output = phrases_dir / f"{output_path_obj.stem}_phrase.mid"
             
             # Extract phrases from the corrected MIDI (before hand separation)
             phrase_results = detector.extract(
