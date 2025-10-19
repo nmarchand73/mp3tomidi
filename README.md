@@ -1,8 +1,10 @@
 # MP3 to MIDI Piano Converter
 
-Convert piano recordings (MP3, WAV) to MIDI files with automatic left/right hand separation.
+Convert piano recordings (MP3, WAV) to MIDI files with automatic left/right hand separation and chord progression analysis.
 
-**✨ NEW: Works with mixed audio!** Automatically isolates piano from songs with vocals, drums, and other instruments.
+**✨ NEW Features:**
+- **Chord Detection:** Automatically analyzes and generates chord progressions
+- **Mixed Audio Support:** Isolates piano from songs with vocals, drums, and other instruments
 
 ## ✅ Ready to Use!
 
@@ -123,6 +125,14 @@ Keep all notes in one track:
 | `--hysteresis` | Prevents rapid hand switching | 5 semitones |
 | `--no-hand-separation` | Keep all notes in single track | off (separation ON) |
 
+### Chord Detection Options
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--no-chord-detection` | Skip chord analysis | off (detection ON) |
+| `--show-chords` | Display full chord progression | off (summary only) |
+| `--chord-voicing` | Chord MIDI style: block\|arpeggio\|broken | block |
+| `--chord-quantize` | Time grid in beats | 1.0 (quarter note) |
+
 ### General Options
 | Option | Description | Default |
 |--------|-------------|---------|
@@ -132,9 +142,13 @@ Keep all notes in one track:
 
 ## Output
 
-MIDI file with 2 tracks:
-- **Track 0**: Right Hand (502 notes in example)
-- **Track 1**: Left Hand (540 notes in example)
+### Main MIDI File
+- **Track 0**: Right Hand (e.g., 234 notes)
+- **Track 1**: Left Hand (e.g., 292 notes)
+
+### Chord Files (generated automatically)
+- **output/midi/chords/song_chords.mid**: Simplified chord progression MIDI
+- **output/midi/chords/song_chords.txt**: Text chord chart
 
 Opens in any DAW or notation software (MuseScore, FL Studio, Ableton, Sibelius, etc.)
 

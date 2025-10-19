@@ -20,6 +20,8 @@ from midi_corrector import MidiCorrector
 from audio_separator import AudioSeparator
 from motif_extractor_v2 import MusicalPhraseDetector
 from quality_evaluator import QualityEvaluator
+from chord_detector import ChordDetector
+from chord_generator import ChordGenerator
 import mido
 
 
@@ -207,7 +209,35 @@ Notes:
         default=1,
         help='Minimum repetitions required for a phrase (default: 1)'
     )
-    
+
+    # Chord detection arguments (enabled by default)
+    parser.add_argument(
+        '--no-chord-detection',
+        action='store_true',
+        help='Skip chord detection and generation (enabled by default)'
+    )
+
+    parser.add_argument(
+        '--show-chords',
+        action='store_true',
+        help='Display detailed chord progression (summary shown by default)'
+    )
+
+    parser.add_argument(
+        '--chord-quantize',
+        type=float,
+        default=1.0,
+        help='Time quantization for chord detection in beats (default: 1.0 = quarter note)'
+    )
+
+    parser.add_argument(
+        '--chord-voicing',
+        type=str,
+        default='block',
+        choices=['block', 'arpeggio', 'broken'],
+        help='Chord voicing style for generated MIDI (default: block)'
+    )
+
     args = parser.parse_args()
     
     # Validate input file
@@ -350,8 +380,76 @@ Notes:
         else:
             if args.verbose:
                 print("\n[3/5] Skipping error correction...")
-        
-        
+
+        # Step 3.5: Chord detection and generation (enabled by default)
+        if not args.no_chord_detection:
+            print("\n[3.5/5] Analyzing chord progression...")
+
+            detector = ChordDetector(
+                quantize_beats=args.chord_quantize,
+                min_notes=2  # Minimum 2 notes for a chord
+            )
+
+            chords = detector.detect_chords(transcribed_midi, verbose=args.verbose)
+
+            if chords:
+                # Show summary
+                detected_key = detector.analyze_key(chords)
+                chord_count = len(chords)
+                unique_chords = len(set(chord_name for _, chord_name, _ in chords))
+
+                print(f"  ✓ Detected {chord_count} chords ({unique_chords} unique)")
+                print(f"  ✓ Key: {detected_key}")
+
+                # Display detailed progression if requested
+                if args.show_chords:
+                    print()
+                    progression_summary = detector.get_progression_summary(
+                        chords,
+                        transcribed_midi.ticks_per_beat,
+                        tempo=500000  # Default tempo
+                    )
+                    print(progression_summary)
+
+                # Generate chord MIDI file (always, by default)
+                generator = ChordGenerator()
+
+                # Create output paths
+                chord_midi_path = args.output.replace('.mid', '_chords.mid')
+                chord_chart_path = args.output.replace('.mid', '_chords.txt')
+
+                # Create chord output directory
+                chord_output_dir = os.path.join(os.path.dirname(args.output), 'chords')
+                os.makedirs(chord_output_dir, exist_ok=True)
+
+                # Update paths to chords subdirectory
+                chord_midi_path = os.path.join(chord_output_dir, os.path.basename(chord_midi_path))
+                chord_chart_path = os.path.join(chord_output_dir, os.path.basename(chord_chart_path))
+
+                # Generate chord MIDI
+                generator.generate_chord_midi(
+                    chords,
+                    chord_midi_path,
+                    voicing=args.chord_voicing,
+                    octave=4,  # Middle C octave
+                    velocity=80,
+                    tempo_bpm=120,
+                    ticks_per_beat=transcribed_midi.ticks_per_beat
+                )
+
+                # Generate text chord chart
+                generator.generate_text_chord_chart(
+                    chords,
+                    chord_chart_path,
+                    transcribed_midi.ticks_per_beat
+                )
+            else:
+                print("  No chords detected (may need adjustment of quantization or min notes)")
+        else:
+            if args.verbose:
+                print("\n[3.5/5] Skipping chord detection (--no-chord-detection)")
+
+
         # Step 4: Separate hands (optional)
         if not args.no_hand_separation:
             print("\n[4/5] Separating left and right hand parts...")

@@ -1,0 +1,81 @@
+CHORD CHART
+============================================================
+
+Measure   2: | Csus4 | Dsus2 |
+Measure   3: | C#aug |
+Measure   6: | Csus4 | Dsus2 |
+Measure   9: | Am7 |
+Measure  10: | Csus4 | C |
+Measure  11: | F9 |
+Measure  13: | F |
+Measure  14: | Em | Dsus4 | Dsus4 |
+Measure  15: | F | C |
+Measure  16: | Dsus2 | [C+B] |
+Measure  17: | Am | Dsus2 | Dsus2 |
+Measure  18: | Cmaj7 |
+Measure  19: | Dm7 | Esus4 |
+Measure  20: | D | G |
+Measure  21: | Am | E |
+Measure  22: | [C+B] |
+Measure  23: | F |
+Measure  24: | Dm | E | E |
+Measure  25: | Dsus2 |
+Measure  26: | Cmaj7 | Dsus4 | E |
+Measure  27: | Fmaj7 |
+Measure  28: | G9 | F |
+Measure  29: | E | Cmaj7 |
+Measure  30: | Esus4 | E | F |
+Measure  31: | Csus4 | Csus2 |
+Measure  32: | Dm | D#aug | Am |
+Measure  33: | Csus4 |
+Measure  34: | C | F9 |
+Measure  36: | Am7 |
+Measure  37: | Em |
+Measure  38: | Am7 | C#aug |
+Measure  39: | C |
+Measure  40: | D | E |
+Measure  41: | Dsus2 | Dsus2 | Cmaj7 |
+Measure  42: | Dm7 |
+Measure  43: | Esus4 | D |
+Measure  44: | G | Am |
+Measure  45: | Cmaj7 |
+Measure  46: | F |
+Measure  47: | Dm |
+Measure  48: | E | E | D9 |
+Measure  49: | Cmaj7 |
+Measure  50: | Dsus4 | C#aug |
+Measure  52: | G9 | Am |
+Measure  53: | Dsus2 | [C+B] |
+Measure  54: | [C+B] | F |
+Measure  55: | Csus4 | Dm |
+Measure  56: | D | E | B |
+Measure  57: | D#aug | Cmaj7 |
+Measure  58: | C | C | A7 | C#aug |
+Measure  59: | C#m | A | C#mM7 | C |
+Measure  60: | C | C | D#aug | Esus2 |
+Measure  61: | D#aug |
+Measure  62: | C | C | [C+C#+A] |
+Measure  63: | C#m | C#aug | [E+F] | Csus4 |
+Measure  64: | Am |
+Measure  65: | Csus4 |
+Measure  66: | C | Csus4 |
+Measure  68: | Am7 |
+Measure  69: | Em |
+Measure  70: | Am7 | F9 |
+Measure  71: | C | Dm |
+Measure  72: | D | [C+B] |
+Measure  73: | Fmaj9 |
+Measure  74: | C | C | Dsus4 |
+Measure  75: | F |
+Measure  76: | Dm |
+Measure  77: | Am |
+Measure  78: | Csus4 |
+Measure  79: | C |
+Measure  80: | C#aug |
+Measure  81: | Dsus2 |
+Measure  82: | Edim |
+Measure  83: | Csus4 |
+Measure  84: | [A#+B] |
+
+============================================================
+Total chords: 135

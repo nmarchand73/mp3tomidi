@@ -8,10 +8,11 @@ MP3toMIDI is a production-ready Python command-line tool that converts piano rec
 
 **Core Pipeline:**
 1. Audio separation (Demucs) - isolate piano from mixed audio
-2. Transcription (Basic-Pitch) - convert audio to MIDI (~85-90% accuracy)
+2. Transcription (Basic-Pitch) - convert audio to MIDI (~93-97% accuracy with v2.0 improvements)
 3. Error correction - tempo/key detection, note filtering, quantization, legato merging
-4. Hand separation - split into left/right hand tracks using pitch clustering
-5. Optional: Musical phrase extraction - identify repeated melodic patterns
+4. **Chord detection** (NEW) - analyze chord progression, generate chord MIDI and text chart
+5. Hand separation - split into left/right hand tracks using advanced algorithm (~85-92% accuracy)
+6. Optional: Musical phrase extraction - identify repeated melodic patterns
 
 ## Quick Start Commands
 
@@ -90,6 +91,19 @@ pip install -r requirements.txt
 - Creates 2-track MIDI: Track 0 (Right Hand), Track 1 (Left Hand)
 - Expected accuracy: ~85-92% (improved from ~70%)
 
+**[chord_detector.py](chord_detector.py)** - Chord progression detection (NEW)
+- Analyzes MIDI to detect chord progressions
+- Recognizes 15+ chord types (major, minor, 7th, 9th, sus, dim, aug)
+- Quantizes notes to beat grid for grouping
+- Identifies key and chord names
+- Outputs progression summaries
+
+**[chord_generator.py](chord_generator.py)** - Chord MIDI generation (NEW)
+- Generates simplified chord-only MIDI from detected chords
+- Three voicing styles: block, arpeggio, broken
+- Creates text chord charts
+- Configurable octave, velocity, tempo
+
 **[motif_extractor_v2.py](motif_extractor_v2.py)** - Musical phrase detection
 - Identifies melodic phrases (8-20 notes by default)
 - Transposition-invariant: uses interval sequences
@@ -108,10 +122,14 @@ Input Audio (MP3/WAV/FLAC)
 [AudioTranscriber] → Raw MIDI (all notes, single track)
     ↓
 [MidiCorrector] → Cleaned MIDI (filtered, extended, merged, quantized)
-    ↓                ↓ (optional)
-    ↓         [MusicalPhraseDetector] → Phrase MIDI files (output/phrases/)
+    ↓
+[ChordDetector] → Chord progression analysis (default)
+    ↓
+[ChordGenerator] → Chord MIDI + text chart (output/midi/chords/)
     ↓
 [HandSeparator] → Final 2-track MIDI (output/midi/)
+    ↓ (optional)
+[MusicalPhraseDetector] → Phrase MIDI files (output/phrases/)
 ```
 
 ### Key Algorithms

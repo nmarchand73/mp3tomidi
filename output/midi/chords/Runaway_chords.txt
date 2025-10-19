@@ -1,0 +1,36 @@
+CHORD CHART
+============================================================
+
+Measure   7: | E |
+Measure  10: | D#aug |
+Measure  11: | C#sus2 | C#sus2 |
+Measure  12: | C#sus2 |
+Measure  13: | C# |
+Measure  14: | F#sus4 | F#sus4 |
+Measure  15: | E | C# |
+Measure  16: | C# | C#m7 | C#aug |
+Measure  17: | E |
+Measure  18: | C#aug | C#aug |
+Measure  19: | Dsus2 | C9 |
+Measure  20: | Dm |
+Measure  22: | E | [G#+A] | Caug |
+Measure  23: | D#7 |
+Measure  24: | Esus2 |
+Measure  25: | Caug |
+Measure  26: | C#m7 |
+Measure  28: | F#sus4 | E | C# |
+Measure  29: | A | Dsus2 |
+Measure  30: | Caug |
+Measure  32: | E | C#sus2 | E |
+Measure  33: | Bmaj7 | Caug | D#aug |
+Measure  34: | Cdim | C#m | C#m | C#m |
+Measure  35: | Esus2 |
+Measure  36: | C#m | F#7 |
+Measure  37: | C#m | C#m |
+Measure  38: | Esus2 | Esus2 |
+Measure  39: | E |
+Measure  41: | C#aug | A | C#aug |
+Measure  42: | Caug |
+
+============================================================
+Total chords: 54
