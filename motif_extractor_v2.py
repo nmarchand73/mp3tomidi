@@ -68,18 +68,18 @@ class MusicalPhraseDetector:
     """
     
     def __init__(self, 
-                 min_phrase_length: int = 6,
-                 max_phrase_length: int = 14,
-                 min_frequency: int = 3,
+                 min_phrase_length: int = 12,
+                 max_phrase_length: int = 24,
+                 min_frequency: int = 2,
                  allow_transposition: bool = True,
                  similarity_threshold: float = 0.8):
         """
         Initialize the musical phrase detector.
         
         Args:
-            min_phrase_length: Minimum number of notes in a phrase (default: 6)
-            max_phrase_length: Maximum number of notes in a phrase (default: 14)
-            min_frequency: Minimum times a phrase must repeat (default: 3)
+            min_phrase_length: Minimum number of notes in a phrase (default: 12)
+            max_phrase_length: Maximum number of notes in a phrase (default: 24)
+            min_frequency: Minimum times a phrase must repeat (default: 2)
             allow_transposition: Allow transposed versions of patterns
             similarity_threshold: Threshold for approximate matching (0-1)
         """
@@ -268,28 +268,28 @@ class MusicalPhraseDetector:
         # Frequency score (logarithmic to avoid dominating other factors)
         freq_score = np.log1p(frequency) * 2.0
         
-        # Length score (prefer complete phrases: 7-12 notes)
+        # Length score (prefer complete musical phrases: 12-24 notes)
         length = len(intervals) + 1
-        optimal_length = 9  # Typical phrase length in popular music
+        optimal_length = 16  # Typical complete phrase in popular music (2-4 bars)
         
-        # Strong penalty for incomplete phrases
-        if length < 6:
-            length_penalty = -8.0  # Reject fragments < 6 notes
-        elif length < 7:
-            length_penalty = -3.0  # Discourage very short phrases
+        # Strong penalty for fragments (not real phrases)
+        if length < 10:
+            length_penalty = -10.0  # Reject short fragments
+        elif length < 12:
+            length_penalty = -5.0   # Strongly discourage incomplete phrases
         else:
-            length_penalty = 0.0   # Accept phrase-length patterns
+            length_penalty = 0.0    # Accept phrase-length patterns
         
-        # Bonus for complete phrases (7-12 notes)
-        if 7 <= length <= 12:
-            length_bonus = 2.0  # Strong bonus for typical phrase length
-        elif length == 6:
-            length_bonus = 0.5  # Small bonus for 6-note phrases
+        # Strong bonus for complete phrases (12-24 notes = 1-2 musical phrases)
+        if 14 <= length <= 20:
+            length_bonus = 3.0  # Very strong bonus for complete phrases
+        elif 12 <= length <= 24:
+            length_bonus = 2.0  # Good bonus for phrase-length patterns
         else:
             length_bonus = 0.0
         
         # Reward patterns close to optimal phrase length
-        length_score = min(length / optimal_length, optimal_length / max(length, 1)) * 4.0 + length_penalty + length_bonus
+        length_score = min(length / optimal_length, optimal_length / max(length, 1)) * 5.0 + length_penalty + length_bonus
         
         # Melodic interest score (mix of steps and leaps)
         if intervals:
