@@ -15,6 +15,7 @@ import tempfile
 from pathlib import Path
 
 from transcribe import AudioTranscriber
+from advanced_transcriber import AdvancedTranscriber
 from hand_separator import HandSeparator
 from midi_corrector import MidiCorrector
 from audio_separator import AudioSeparator
@@ -87,6 +88,12 @@ Notes:
         '--use-spectral',
         action='store_true',
         help='Use CQT spectral analysis instead of neural network (experimental, may be more accurate)'
+    )
+    
+    parser.add_argument(
+        '--use-advanced',
+        action='store_true',
+        help='Use advanced multi-pass transcription (better quality, slower)'
     )
     
     parser.add_argument(
@@ -294,7 +301,29 @@ Notes:
         # Step 2: Transcribe audio to MIDI
         print(f"\n[2/5] Transcribing audio to MIDI...")
         
-        if args.use_spectral:
+        if args.use_advanced:
+            # Use advanced multi-pass transcription
+            if args.verbose:
+                print("  Using Advanced Multi-Pass Transcription...")
+            
+            advanced_transcriber = AdvancedTranscriber()
+            
+            transcribed_midi_path = advanced_transcriber.transcribe(
+                audio_file=audio_to_transcribe,
+                output_dir=temp_dir,
+                multi_pass=True,
+                onset_alignment=True,
+                duration_smoothing=True,
+                verbose=args.verbose
+            )
+            
+            if args.verbose:
+                midi_file = mido.MidiFile(transcribed_midi_path)
+                note_count = sum(1 for track in midi_file.tracks
+                               for msg in track if msg.type == 'note_on' and msg.velocity > 0)
+                print(f"  - Transcribed {note_count} notes (Advanced method)")
+        
+        elif args.use_spectral:
             # Use CQT-based spectral transcription
             if args.verbose:
                 print("  Using Constant-Q Transform (CQT) spectral analysis...")
@@ -318,7 +347,7 @@ Notes:
             
             if args.verbose:
                 # Count notes
-                note_count = sum(1 for track in transcribed_midi.tracks 
+                note_count = sum(1 for track in transcribed_midi.tracks
                                for msg in track if msg.type == 'note_on' and msg.velocity > 0)
                 print(f"  - Transcribed {note_count} notes (CQT method)")
         else:
