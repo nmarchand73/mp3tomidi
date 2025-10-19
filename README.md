@@ -35,6 +35,12 @@ Creates `output/input.mid` with 2 tracks (right hand + left hand).
 .\RUN.bat input.mp3 -o myfile.mid      # Save to specific file
 ```
 
+### Extract Repeated Motif
+```powershell
+.\RUN.bat input.mp3 --extract-motif --verbose
+# Creates: output/input.mid (full song) + output/input_motif.mid (repeated pattern)
+```
+
 ### Change Split Point
 Default is middle C (MIDI note 60). Adjust for different ranges:
 ```powershell
@@ -70,6 +76,13 @@ Catch quieter notes:
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--no-separation` | Skip audio separation (for solo piano) | off |
+
+### Motif Extraction Options
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--extract-motif` | Extract most repeated motif | off |
+| `--motif-min-length` | Minimum notes in motif | 3 |
+| `--motif-max-length` | Maximum notes in motif | 12 |
 
 ### Error Correction Options
 | Option | Description | Default |
@@ -150,6 +163,13 @@ Opens in any DAW or notation software (MuseScore, FL Studio, Ableton, Sibelius, 
 - Rule-based algorithm with pitch clustering
 - Voice leading principles
 - Configurable split point and hysteresis
+
+### 🎼 Motif Extraction (NEW!)
+- **Identifies most repeated musical motif** automatically
+- Analyzes melodic patterns (pitch intervals)
+- Analyzes rhythmic patterns (note durations)
+- Exports motif as separate MIDI file
+- Useful for finding themes, hooks, and riffs
 
 ## Technology
 

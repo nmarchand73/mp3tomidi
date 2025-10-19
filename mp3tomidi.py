@@ -18,6 +18,7 @@ from transcribe import AudioTranscriber
 from hand_separator import HandSeparator
 from midi_corrector import MidiCorrector
 from audio_separator import AudioSeparator
+from motif_extractor import MotifExtractor
 import mido
 
 
@@ -124,6 +125,26 @@ Notes:
         '--no-separation',
         action='store_true',
         help='Skip audio source separation (use if input is already solo piano)'
+    )
+    
+    parser.add_argument(
+        '--extract-motif',
+        action='store_true',
+        help='Extract the most repeated motif to a separate MIDI file'
+    )
+    
+    parser.add_argument(
+        '--motif-min-length',
+        type=int,
+        default=3,
+        help='Minimum motif length in notes (default: 3)'
+    )
+    
+    parser.add_argument(
+        '--motif-max-length',
+        type=int,
+        default=12,
+        help='Maximum motif length in notes (default: 12)'
     )
     
     args = parser.parse_args()
@@ -245,8 +266,24 @@ Notes:
             print(f"  - Right hand: {right_notes} notes")
             print(f"  - Left hand: {left_notes} notes")
         
-        # Step 5: Save output
-        print("\n[5/5] Saving output MIDI file...")
+        # Step 5: Extract motif (optional)
+        if args.extract_motif:
+            print("\n[5/6] Extracting most repeated motif...")
+            extractor = MotifExtractor(
+                min_motif_length=args.motif_min_length,
+                max_motif_length=args.motif_max_length
+            )
+            
+            # Create motif output path
+            output_path_obj = Path(args.output)
+            motif_output = output_path_obj.parent / f"{output_path_obj.stem}_motif.mid"
+            
+            # Extract motif from the corrected MIDI (before hand separation)
+            extractor.extract(transcribed_midi, str(motif_output), verbose=args.verbose)
+        
+        # Step 6: Save output
+        step_num = "6/6" if args.extract_motif else "5/5"
+        print(f"\n[{step_num}] Saving output MIDI file...")
         separated_midi.save(args.output)
         
         if args.verbose:
@@ -274,6 +311,11 @@ Notes:
         print(f"\n✓ Conversion complete! Output saved to: {args.output}")
         print(f"  Track 0: Right Hand")
         print(f"  Track 1: Left Hand")
+        
+        if args.extract_motif:
+            output_path_obj = Path(args.output)
+            motif_output = output_path_obj.parent / f"{output_path_obj.stem}_motif.mid"
+            print(f"\n✓ Motif extracted to: {motif_output}")
         
     except Exception as e:
         print(f"\n✗ Error: {str(e)}", file=sys.stderr)
