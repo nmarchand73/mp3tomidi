@@ -421,15 +421,23 @@ class EnhancedMotifExtractor:
         # Sort notes by start time
         sorted_notes = sorted(motif.notes, key=lambda n: n.start_time)
         
-        # Create events
+        # Normalize times - start from 0
+        if sorted_notes:
+            first_note_time = sorted_notes[0].start_time
+        else:
+            first_note_time = 0
+        
+        # Create events with normalized times
         events = []
         for note in sorted_notes:
-            events.append((note.start_time, 'on', note.pitch, note.velocity))
-            events.append((note.start_time + note.duration, 'off', note.pitch, 0))
+            normalized_start = note.start_time - first_note_time
+            normalized_end = normalized_start + note.duration
+            events.append((normalized_start, 'on', note.pitch, note.velocity))
+            events.append((normalized_end, 'off', note.pitch, 0))
         
         events.sort(key=lambda e: (e[0], 0 if e[1] == 'on' else 1))
         
-        # Write events
+        # Write events with delta times
         current_time = 0
         for abs_time, event_type, pitch, velocity in events:
             delta = abs_time - current_time
