@@ -56,13 +56,29 @@ Catch quieter notes:
 .\RUN.bat --help
 ```
 
+### Transcription Options
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--onset-threshold` | Note detection (0-1, higher=stricter) | 0.5 |
+| `--frame-threshold` | Duration detection (0-1) | 0.3 |
+
+### Error Correction Options
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--no-correction` | Skip error correction | off |
+| `--min-note-duration` | Min note length in ms | 50 |
+| `--min-velocity` | Min note velocity (0-127) | 15 |
+
+### Hand Separation Options
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--split-note` | MIDI note for hand split | 60 (middle C) |
 | `--hysteresis` | Prevents rapid hand switching | 5 semitones |
-| `--onset-threshold` | Note detection (0-1, higher=stricter) | 0.5 |
-| `--frame-threshold` | Duration detection (0-1) | 0.3 |
-| `--verbose` | Show detailed progress | off |
+
+### General Options
+| Option | Description | Default |
+|--------|-------------|---------|
+| `-v, --verbose` | Show detailed progress | off |
 | `--keep-temp` | Keep intermediate files | off |
 
 ## Output
@@ -84,13 +100,36 @@ Opens in any DAW or notation software (MuseScore, FL Studio, Ableton, Sibelius, 
 
 Sample conversion of "A Forest.mp3":
 - **Transcribed**: 1042 notes (pitch range: MIDI 33-81)
-- **Right hand**: 502 notes
-- **Left hand**: 540 notes
+- **Detected key**: D# minor
+- **Error correction**: 0 notes removed (all passed quality filters)
+- **Out-of-key notes**: 772 flagged (74.1% - typical for chromatic music)
+- **Right hand**: 449 notes
+- **Left hand**: 454 notes
 - **Processing time**: ~15 seconds
+
+## Features
+
+### 🎵 Audio Transcription
+- Spotify's basic-pitch neural network (~85-90% accuracy)
+- Polyphonic piano transcription
+- Configurable sensitivity
+
+### ✨ Error Correction (NEW!)
+- **Duration filtering**: Removes very short notes (< 50ms)
+- **Velocity filtering**: Removes very quiet notes (< velocity 15)
+- **Range filtering**: Removes notes outside piano range (A0-C8)
+- **Key detection**: Automatically detects musical key using Krumhansl-Schmuckler algorithm
+- **Out-of-key flagging**: Identifies suspicious notes outside the detected scale
+
+### 🤝 Hand Separation
+- Rule-based algorithm with pitch clustering
+- Voice leading principles
+- Configurable split point and hysteresis
 
 ## Technology
 
 - **Transcription**: Spotify's basic-pitch (state-of-the-art neural network)
+- **Error Correction**: Krumhansl-Schmuckler key detection + statistical filtering
 - **Hand Separation**: Rule-based algorithm with pitch clustering and voice leading
 - **Environment**: Python 3.11 with TensorFlow 2.15
 

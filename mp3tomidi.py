@@ -16,6 +16,7 @@ from pathlib import Path
 
 from transcribe import AudioTranscriber
 from hand_separator import HandSeparator
+from midi_corrector import MidiCorrector
 import mido
 
 
@@ -98,6 +99,26 @@ Notes:
         help='Keep temporary transcribed MIDI file (before hand separation)'
     )
     
+    parser.add_argument(
+        '--no-correction',
+        action='store_true',
+        help='Skip error correction (keep all transcribed notes)'
+    )
+    
+    parser.add_argument(
+        '--min-note-duration',
+        type=float,
+        default=50.0,
+        help='Minimum note duration in milliseconds for error correction (default: 50)'
+    )
+    
+    parser.add_argument(
+        '--min-velocity',
+        type=int,
+        default=15,
+        help='Minimum note velocity for error correction (default: 15)'
+    )
+    
     args = parser.parse_args()
     
     # Validate input file
@@ -135,7 +156,7 @@ Notes:
     
     try:
         # Step 1: Transcribe audio to MIDI
-        print("\n[1/3] Transcribing audio to MIDI...")
+        print("\n[1/4] Transcribing audio to MIDI...")
         transcriber = AudioTranscriber()
         
         # Use temp directory for intermediate MIDI file
@@ -156,15 +177,26 @@ Notes:
             print(f"  - Pitch range: {info['pitch_range'][0]} - {info['pitch_range'][1]}")
             print(f"  - Ticks per beat: {info['ticks_per_beat']}")
         
-        # Step 2: Separate hands
-        print("\n[2/3] Separating left and right hand parts...")
+        # Step 2: Error correction
+        transcribed_midi = mido.MidiFile(transcribed_midi_path)
+        
+        if not args.no_correction:
+            print("\n[2/4] Correcting errors...")
+            corrector = MidiCorrector(
+                min_note_duration_ms=args.min_note_duration,
+                min_velocity=args.min_velocity
+            )
+            transcribed_midi = corrector.correct(transcribed_midi, verbose=args.verbose)
+        else:
+            if args.verbose:
+                print("\n[2/4] Skipping error correction...")
+        
+        # Step 3: Separate hands
+        print("\n[3/4] Separating left and right hand parts...")
         separator = HandSeparator(
             split_note=args.split_note,
             hysteresis=args.hysteresis
         )
-        
-        # Load the transcribed MIDI
-        transcribed_midi = mido.MidiFile(transcribed_midi_path)
         
         # Perform hand separation
         separated_midi = separator.separate(transcribed_midi)
@@ -182,8 +214,8 @@ Notes:
             print(f"  - Right hand: {right_notes} notes")
             print(f"  - Left hand: {left_notes} notes")
         
-        # Step 3: Save output
-        print("\n[3/3] Saving output MIDI file...")
+        # Step 4: Save output
+        print("\n[4/4] Saving output MIDI file...")
         separated_midi.save(args.output)
         
         if args.verbose:
