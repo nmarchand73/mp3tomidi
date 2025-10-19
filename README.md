@@ -160,8 +160,10 @@ Opens in any DAW or notation software (MuseScore, FL Studio, Ableton, Sibelius, 
 - Polyphonic piano transcription
 - Configurable sensitivity
 
-### ✨ Error Correction
-- **Duration filtering**: Removes very short notes (< 50ms)
+### ✨ Enhanced Error Correction (NEW!)
+- **Smart duration handling**: Removes only very short notes (<50ms), extends short notes (50-120ms)
+- **Automatic tempo detection**: Uses actual MIDI tempo for accurate calculations
+- **Rhythmic quantization**: 50% strength by default (preserves natural feel)
 - **Velocity filtering**: Removes very quiet notes (< velocity 15)
 - **Range filtering**: Removes notes outside piano range (A0-C8)
 - **Key detection**: Automatically detects musical key using Krumhansl-Schmuckler algorithm
