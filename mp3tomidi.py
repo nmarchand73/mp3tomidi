@@ -69,6 +69,12 @@ Notes:
     )
     
     parser.add_argument(
+        '--no-hand-separation',
+        action='store_true',
+        help='Disable hand separation (output single track with all notes)'
+    )
+    
+    parser.add_argument(
         '--onset-threshold',
         type=float,
         default=0.5,
@@ -126,6 +132,19 @@ Notes:
         default=16,
         choices=[4, 8, 16, 32],
         help='Quantization resolution: 4=quarter notes, 8=8th, 16=16th (default: 16)'
+    )
+    
+    parser.add_argument(
+        '--no-merge',
+        action='store_true',
+        help='Disable merging consecutive notes of same pitch (enabled by default for legato)'
+    )
+    
+    parser.add_argument(
+        '--merge-threshold',
+        type=float,
+        default=50.0,
+        help='Max gap in ms between notes to merge (default: 50)'
     )
     
     parser.add_argument(
@@ -279,35 +298,42 @@ Notes:
                 min_note_duration_ms=args.min_note_duration,
                 min_velocity=args.min_velocity,
                 quantize=not args.no_quantize,  # Quantize by default unless disabled
-                quantize_resolution=args.quantize_resolution
+                quantize_resolution=args.quantize_resolution,
+                merge_notes=not args.no_merge,  # Merge by default unless disabled
+                merge_threshold_ms=args.merge_threshold
             )
             transcribed_midi = corrector.correct(transcribed_midi, verbose=args.verbose)
         else:
             if args.verbose:
                 print("\n[3/5] Skipping error correction...")
         
-        # Step 4: Separate hands
-        print("\n[4/5] Separating left and right hand parts...")
-        hand_separator = HandSeparator(
-            split_note=args.split_note,
-            hysteresis=args.hysteresis
-        )
-        
-        # Perform hand separation
-        separated_midi = hand_separator.separate(transcribed_midi)
-        
-        if args.verbose:
-            # Count notes in each track
-            right_notes = 0
-            left_notes = 0
-            for i, track in enumerate(separated_midi.tracks):
-                note_count = sum(1 for msg in track if msg.type == 'note_on' and msg.velocity > 0)
-                if i == 0:
-                    right_notes = note_count
-                elif i == 1:
-                    left_notes = note_count
-            print(f"  - Right hand: {right_notes} notes")
-            print(f"  - Left hand: {left_notes} notes")
+        # Step 4: Separate hands (optional)
+        if not args.no_hand_separation:
+            print("\n[4/5] Separating left and right hand parts...")
+            hand_separator = HandSeparator(
+                split_note=args.split_note,
+                hysteresis=args.hysteresis
+            )
+            
+            # Perform hand separation
+            separated_midi = hand_separator.separate(transcribed_midi)
+            
+            if args.verbose:
+                # Count notes in each track
+                right_notes = 0
+                left_notes = 0
+                for i, track in enumerate(separated_midi.tracks):
+                    note_count = sum(1 for msg in track if msg.type == 'note_on' and msg.velocity > 0)
+                    if i == 0:
+                        right_notes = note_count
+                    elif i == 1:
+                        left_notes = note_count
+                print(f"  - Right hand: {right_notes} notes")
+                print(f"  - Left hand: {left_notes} notes")
+        else:
+            if args.verbose:
+                print("\n[4/5] Skipping hand separation...")
+            separated_midi = transcribed_midi
         
         # Step 5: Extract musical phrases (optional)
         if args.extract_phrases:

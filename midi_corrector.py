@@ -35,7 +35,9 @@ class MidiCorrector:
                  min_note: int = MIN_PIANO_NOTE,
                  max_note: int = MAX_PIANO_NOTE,
                  quantize: bool = False,
-                 quantize_resolution: int = 16):
+                 quantize_resolution: int = 16,
+                 merge_notes: bool = True,
+                 merge_threshold_ms: float = 50.0):
         """
         Initialize the corrector.
         
@@ -46,6 +48,8 @@ class MidiCorrector:
             max_note: Maximum MIDI note number (default: 108 = C8)
             quantize: Apply rhythmic quantization (default: False)
             quantize_resolution: Quantization resolution in ticks (16 = 16th notes, default: 16)
+            merge_notes: Merge consecutive notes of same pitch (default: True)
+            merge_threshold_ms: Max gap between notes to merge in ms (default: 50ms)
         """
         self.min_note_duration_ms = min_note_duration_ms
         self.min_velocity = min_velocity
@@ -53,6 +57,8 @@ class MidiCorrector:
         self.max_note = max_note
         self.quantize = quantize
         self.quantize_resolution = quantize_resolution
+        self.merge_notes = merge_notes
+        self.merge_threshold_ms = merge_threshold_ms
         
         self.stats = {
             'total_notes': 0,
@@ -81,6 +87,7 @@ class MidiCorrector:
             'removed_quiet': 0,
             'removed_range': 0,
             'extended_notes': 0,
+            'merged_notes': 0,
             'quantized_notes': 0,
             'out_of_key': 0,
             'detected_key': None,
@@ -114,6 +121,14 @@ class MidiCorrector:
             midi_file.ticks_per_beat, 
             tempo
         )
+        
+        # Merge consecutive notes of same pitch if requested
+        if self.merge_notes:
+            filtered_notes = self._merge_consecutive_notes(
+                filtered_notes,
+                midi_file.ticks_per_beat,
+                tempo
+            )
         
         # Apply quantization if requested
         if self.quantize:
@@ -254,6 +269,66 @@ class MidiCorrector:
             self.stats['quantized_notes'] += 1
         
         return quantized
+    
+    def _merge_consecutive_notes(self, notes: List[Dict], ticks_per_beat: int,
+                                  tempo: int) -> List[Dict]:
+        """
+        Merge consecutive notes of the same pitch that are very close in time.
+        This creates legato/tied notes instead of many short repeated notes.
+        
+        Args:
+            notes: List of note dictionaries
+            ticks_per_beat: MIDI ticks per beat
+            tempo: Tempo in microseconds per beat
+            
+        Returns:
+            List of notes with consecutive same-pitch notes merged
+        """
+        if not notes:
+            return notes
+        
+        # Convert merge threshold from ms to ticks
+        ms_per_beat = tempo / 1000.0
+        ms_per_tick = ms_per_beat / ticks_per_beat
+        merge_threshold_ticks = self.merge_threshold_ms / ms_per_tick
+        
+        # Sort notes by pitch, then by start time
+        sorted_notes = sorted(notes, key=lambda n: (n['note'], n['start_time']))
+        
+        merged = []
+        i = 0
+        
+        while i < len(sorted_notes):
+            current_note = sorted_notes[i].copy()
+            
+            # Look ahead for consecutive notes of the same pitch
+            j = i + 1
+            while j < len(sorted_notes):
+                next_note = sorted_notes[j]
+                
+                # Check if next note has same pitch
+                if next_note['note'] != current_note['note']:
+                    break
+                
+                # Check if notes are close enough to merge (gap < threshold)
+                gap = next_note['start_time'] - current_note['end_time']
+                
+                if 0 <= gap <= merge_threshold_ticks:
+                    # Merge: extend current note to cover next note
+                    current_note['end_time'] = next_note['end_time']
+                    current_note['duration_ticks'] = current_note['end_time'] - current_note['start_time']
+                    # Use average velocity
+                    current_note['velocity'] = int((current_note['velocity'] + next_note['velocity']) / 2)
+                    self.stats['merged_notes'] += 1
+                    j += 1
+                else:
+                    # Gap too large, stop merging
+                    break
+            
+            merged.append(current_note)
+            i = j if j > i + 1 else i + 1
+        
+        return merged
     
     def _detect_key(self, notes: List[Dict]) -> Tuple[int, str]:
         """
@@ -423,6 +498,9 @@ class MidiCorrector:
         print(f"    Extended (50-{int(self.min_note_duration_ms)}ms): {self.stats['extended_notes']}")
         print(f"    Removed (too quiet): {self.stats['removed_quiet']}")
         print(f"    Removed (out of range): {self.stats['removed_range']}")
+        
+        if self.merge_notes and self.stats['merged_notes'] > 0:
+            print(f"    Merged (legato): {self.stats['merged_notes']}")
         
         if self.quantize and self.stats['quantized_notes'] > 0:
             print(f"    Quantized: {self.stats['quantized_notes']}")
