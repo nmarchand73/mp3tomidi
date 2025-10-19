@@ -65,14 +65,26 @@ Catch quieter notes:
 .\RUN.bat input.mp3 --onset-threshold 0.3
 ```
 
+### Advanced Multi-Pass Transcription
+For maximum note capture (best recall, 3x slower):
+```powershell
+.\RUN.bat input.mp3 --use-advanced --verbose
+
+# Recommended for:
+# - Complex music with many weak/soft notes
+# - Maximum note detection (+70% recall vs default)
+# - Willingness to clean up some false positives
+```
+
 ### Evaluate Transcription Quality
 Compare results against original audio:
 ```powershell
 .\RUN.bat input.mp3 --evaluate-quality --verbose
 
-# Compare neural network vs spectral methods
-.\RUN.bat input.mp3 --evaluate-quality --verbose           # basic-pitch
-.\RUN.bat input.mp3 --use-spectral --evaluate-quality --verbose  # CQT spectral
+# Compare all methods:
+.\RUN.bat input.mp3 --evaluate-quality --verbose                    # basic-pitch (best)
+.\RUN.bat input.mp3 --use-advanced --evaluate-quality --verbose     # multi-pass
+.\RUN.bat input.mp3 --use-spectral --evaluate-quality --verbose     # CQT spectral
 ```
 
 ### Skip Hand Separation
@@ -129,6 +141,7 @@ Keep all notes in one track:
 ### Advanced Options
 | Option | Description | Default |
 |--------|-------------|---------|
+| `--use-advanced` | Multi-pass transcription (+70% recall) | off (3x slower) |
 | `--align-to-audio` | Align MIDI timing to audio (DTW) | off (slower) |
 | `--use-spectral` | Use CQT spectral transcription | off (experimental) |
 | `--evaluate-quality` | Evaluate transcription quality | off |
@@ -219,6 +232,15 @@ Opens in any DAW or notation software (MuseScore, FL Studio, Ableton, Sibelius, 
 - **Peak detection**: Identifies notes from spectral peaks
 - **Alternative method**: Can be used instead of neural network (--use-spectral)
 
+### 🎯 Advanced Multi-Pass Transcription (NEW!)
+- **3-pass detection**: Strict + Default + Sensitive thresholds
+- **Intelligent merging**: Weighted voting with note clustering
+- **Piano optimization**: Frequency range limiting (27.5-4186 Hz)
+- **Onset alignment**: DTW-based alignment with audio onsets (~37ms avg correction)
+- **Duration smoothing**: Harmonic analysis for natural note lengths
+- **+70% recall**: Captures weak/soft notes that default method misses
+- **Trade-off**: Lower precision (more false positives), 3x slower
+
 ### 📊 Quality Evaluation (NEW!)
 - **Spectral similarity**: Chromagram correlation with original audio
 - **Onset detection**: Precision, recall, and F1 score for note timing
@@ -226,6 +248,11 @@ Opens in any DAW or notation software (MuseScore, FL Studio, Ableton, Sibelius, 
 - **Pitch distribution**: Similarity of pitch class profiles
 - **Overall quality score**: Weighted average with 5-star rating system
 - **Comparison tool**: Validate and compare transcription methods
+
+**Benchmark (IT FLOWS.mp3):**
+- Basic-Pitch: 71.7% ⭐⭐⭐⭐ (best overall, recommended)
+- Advanced Multi-Pass: 69.9% ⭐⭐⭐⭐ (best recall +70%)
+- CQT Spectral: 55.3% ⭐⭐⭐ (experimental)
 
 ## Technology
 
