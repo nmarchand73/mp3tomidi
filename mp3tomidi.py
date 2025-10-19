@@ -75,6 +75,12 @@ Notes:
     )
     
     parser.add_argument(
+        '--align-to-audio',
+        action='store_true',
+        help='Align MIDI timing to audio using spectral analysis (advanced, slower)'
+    )
+    
+    parser.add_argument(
         '--onset-threshold',
         type=float,
         default=0.5,
@@ -306,6 +312,16 @@ Notes:
         else:
             if args.verbose:
                 print("\n[3/5] Skipping error correction...")
+        
+        # Step 3.5: Align MIDI to audio (optional, advanced)
+        if args.align_to_audio:
+            print("\n[3.5/5] Aligning MIDI timing to audio (spectral analysis)...")
+            aligner = AudioMidiAligner(sr=22050)
+            transcribed_midi = aligner.align(
+                audio_to_transcribe,
+                transcribed_midi,
+                verbose=args.verbose
+            )
         
         # Step 4: Separate hands (optional)
         if not args.no_hand_separation:
