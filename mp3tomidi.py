@@ -241,11 +241,11 @@ Notes:
         help='Chord voicing style for generated MIDI (default: block)'
     )
 
-    # Enhancement arguments (GiantMIDI-inspired)
+    # Enhancement arguments (GiantMIDI-inspired, enabled by default)
     parser.add_argument(
-        '--enhance-transcription',
+        '--no-enhancement',
         action='store_true',
-        help='Apply advanced enhancements: pedal detection, velocity refinement, timing correction (adds ~15-20s)'
+        help='Skip advanced enhancements (pedal, velocity, timing) to save ~15-20s processing time'
     )
 
     args = parser.parse_args()
@@ -373,10 +373,10 @@ Notes:
                 rating = "Poor"
             print(f"  Rating: {rating}\n")
         
-        # Step 2.6: Advanced transcription enhancement (optional)
+        # Step 2.6: Advanced transcription enhancement (runs by default)
         transcribed_midi = mido.MidiFile(transcribed_midi_path)
         
-        if args.enhance_transcription:
+        if not args.no_enhancement:
             print("\n[2.6/5] Enhancing transcription (pedal, velocity, timing)...")
             
             # Pedal detection
@@ -428,10 +428,11 @@ Notes:
             
             # Save enhanced MIDI for next steps
             transcribed_midi.save(transcribed_midi_path)
+        else:
+            if args.verbose:
+                print("\n[2.6/5] Skipping enhancements (--no-enhancement flag)")
         
         # Step 3: Error correction
-        if not transcribed_midi:
-            transcribed_midi = mido.MidiFile(transcribed_midi_path)
         
         if not args.no_correction:
             print("\n[3/5] Correcting errors...")

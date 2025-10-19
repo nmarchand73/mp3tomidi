@@ -110,20 +110,20 @@ class OnsetRefiner:
 
 ### Command-Line Interface
 
-New optional flag in `mp3tomidi.py`:
+**Enhancements run by DEFAULT** in `mp3tomidi.py`. New opt-out flag:
 ```bash
---enhance-transcription    Apply advanced enhancements: pedal detection, velocity, timing (adds ~15-20s)
+--no-enhancement    Skip advanced enhancements (pedal, velocity, timing) to save ~15-20s
 ```
 
 ### Pipeline Integration
 
-Enhancements run after quality evaluation (Step 2.6), before error correction:
+Enhancements run by default after quality evaluation (Step 2.6), before error correction:
 ```
 [2/5] Transcription (basic-pitch)
   ↓
 [2.5/5] Quality Evaluation (default)
   ↓
-[2.6/5] Enhancement (optional with --enhance-transcription)
+[2.6/5] Enhancement (DEFAULT - use --no-enhancement to skip)
   → Pedal Detection
   → Velocity Enhancement  
   → Onset/Offset Refinement
@@ -136,8 +136,8 @@ Enhancements run after quality evaluation (Step 2.6), before error correction:
 ### Code Example
 
 ```python
-# In mp3tomidi.py after quality evaluation
-if args.enhance_transcription:
+# In mp3tomidi.py after quality evaluation (runs by default)
+if not args.no_enhancement:
     print("\n[2.6/5] Enhancing transcription (pedal, velocity, timing)...")
     
     # Pedal detection
@@ -155,22 +155,35 @@ if args.enhance_transcription:
     
     # Save enhanced MIDI for next steps
     transcribed_midi.save(transcribed_midi_path)
+else:
+    if args.verbose:
+        print("\n[2.6/5] Skipping enhancements (--no-enhancement flag)")
 ```
 
 ## Usage Examples
 
-### Basic Enhancement
+### Default Usage (Enhancement Enabled)
 ```powershell
-.\RUN.bat input.mp3 --enhance-transcription --verbose
+# Enhancement runs automatically by default
+.\RUN.bat input.mp3 --verbose
+```
+
+### Skip Enhancement for Speed
+```powershell
+# Use --no-enhancement to skip and save ~15-20s
+.\RUN.bat input.mp3 --no-enhancement --verbose
 ```
 
 ### With Other Options
 ```powershell
-# Solo piano (skip separation) + enhancement
-.\RUN.bat input.mp3 --no-separation --enhance-transcription --verbose
+# Solo piano (skip separation) with enhancement (default)
+.\RUN.bat input.mp3 --no-separation --verbose
 
-# Full pipeline with enhancement
-.\RUN.bat input.mp3 --enhance-transcription --extract-phrases --verbose
+# Full pipeline with enhancement + phrase extraction
+.\RUN.bat input.mp3 --extract-phrases --verbose
+
+# Fast mode: skip separation, enhancement, and quality eval
+.\RUN.bat input.mp3 --no-separation --no-enhancement --no-quality-eval --verbose
 ```
 
 ## Expected Improvements
@@ -225,31 +238,32 @@ Dependencies (already in `requirements.txt`):
 
 ## When to Use Enhancement
 
-**Recommended for:**
-- ✅ Complex piano performances where expression matters
-- ✅ Classical pieces with pedal and dynamics
-- ✅ When final MIDI will be edited in DAW
-- ✅ Archival or high-quality transcriptions
+**Default (Recommended):**
+Enhancement now runs by default for best quality. It provides:
+- ✅ Better expression capture (pedal, dynamics)
+- ✅ More realistic velocities (piano dynamics range)
+- ✅ Improved timing precision (±50ms)
+- ✅ Professional-quality transcriptions
 
-**Not necessary for:**
-- ❌ Quick transcriptions or demos
-- ❌ Rhythmic/percussive playing (little pedal)
-- ❌ When processing speed is critical
-- ❌ Already high-quality basic-pitch output
+**Use `--no-enhancement` if:**
+- ❌ Processing speed is critical (~15-20s savings)
+- ❌ Working with simple/percussive playing (little pedal)
+- ❌ Basic-pitch output is already sufficient
+- ❌ Batch processing many files quickly
 
 ## Testing
 
 To verify implementation:
 ```powershell
 # Check option is available
-C:\Users\nmarc\miniconda3\envs\mp3tomidi\python.exe mp3tomidi.py --help | Select-String "enhance"
+C:\Users\nmarc\miniconda3\envs\mp3tomidi\python.exe mp3tomidi.py --help | Select-String "enhancement"
 
-# Test on sample file (verbose mode shows detailed stats)
-.\RUN.bat "input\sample.mp3" --enhance-transcription --verbose
+# Test on sample file (enhancement runs by default, verbose shows stats)
+.\RUN.bat "input\sample.mp3" --verbose
 
 # Compare with/without enhancement
-.\RUN.bat "input\sample.mp3" -o output_basic.mid
-.\RUN.bat "input\sample.mp3" -o output_enhanced.mid --enhance-transcription
+.\RUN.bat "input\sample.mp3" -o output_enhanced.mid --verbose
+.\RUN.bat "input\sample.mp3" -o output_basic.mid --no-enhancement --verbose
 ```
 
 ## Future Improvements (If Needed)
@@ -279,11 +293,12 @@ Updated files:
 
 This implementation successfully brings GiantMIDI-inspired enhancements to our MP3-to-MIDI converter without requiring model retraining or extensive development time. The enhancements are:
 - **Production-ready**: Fully tested and integrated
-- **Optional**: Doesn't slow default usage
+- **Enabled by default**: Runs automatically for best quality
+- **Optional skip**: Use `--no-enhancement` for speed
 - **Effective**: Measurable improvements in pedal, velocity, and timing
 - **Documented**: Comprehensive user and developer documentation
 
-Users can now choose between fast default transcription or slower enhanced transcription depending on their quality requirements.
+All transcriptions now benefit from enhanced pedal detection, velocity modeling, and timing refinement by default. Users can opt out with `--no-enhancement` if processing speed is more important than quality.
 
 ---
 

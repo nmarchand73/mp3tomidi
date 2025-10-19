@@ -3,7 +3,7 @@
 Convert piano recordings (MP3, WAV) to MIDI files with automatic left/right hand separation and chord progression analysis.
 
 **✨ NEW Features:**
-- **Advanced Transcription Enhancement (GiantMIDI-inspired):** Pedal detection, velocity refinement, and timing correction
+- **Advanced Transcription Enhancement (GiantMIDI-inspired - RUNS BY DEFAULT):** Pedal detection, velocity refinement, and timing correction
 - **Chord Detection:** Automatically analyzes and generates chord progressions
 - **Mixed Audio Support:** Isolates piano from songs with vocals, drums, and other instruments
 
@@ -68,17 +68,17 @@ Catch quieter notes:
 .\RUN.bat input.mp3 --onset-threshold 0.3
 ```
 
-### Enhanced Transcription (Experimental)
-Apply advanced audio analysis for better results (adds ~15-20s):
+### Skip Transcription Enhancements
+Advanced enhancements run by default (pedal, velocity, timing). To skip them for faster processing:
 ```powershell
-.\RUN.bat input.mp3 --enhance-transcription --verbose
+.\RUN.bat input.mp3 --no-enhancement
 ```
-This feature, inspired by ByteDance's GiantMIDI-Piano, adds:
+This feature, inspired by ByteDance's GiantMIDI-Piano, provides:
 - **Pedal Detection:** Detects sustain pedal usage from note overlap patterns
 - **Velocity Enhancement:** Improves dynamics using spectral energy analysis
 - **Timing Refinement:** Sub-frame precision for note onsets/offsets
 
-Recommended for complex performances where expression is critical.
+Adds ~15-20 seconds processing time. Use `--no-enhancement` to skip if speed is critical.
 
 ### Skip Quality Evaluation
 Quality evaluation runs by default. To skip it for faster processing:
@@ -104,7 +104,7 @@ Keep all notes in one track:
 |--------|-------------|---------|
 | `--onset-threshold` | Note detection (0-1, higher=stricter) | 0.5 |
 | `--frame-threshold` | Duration detection (0-1) | 0.3 |
-| `--enhance-transcription` | Advanced enhancements (pedal, velocity, timing) | off |
+| `--no-enhancement` | Skip enhancements (pedal, velocity, timing) | off (enhancement ON) |
 
 ### Source Separation Options  
 | Option | Description | Default |
@@ -207,14 +207,14 @@ Opens in any DAW or notation software (MuseScore, FL Studio, Ableton, Sibelius, 
 - Polyphonic piano transcription
 - Configurable sensitivity
 
-### 🎹 Advanced Transcription Enhancement (NEW! - GiantMIDI-Inspired)
-Optional post-processing using audio analysis (use `--enhance-transcription`):
+### 🎹 Advanced Transcription Enhancement (NEW! - RUNS BY DEFAULT - GiantMIDI-Inspired)
+Automatic post-processing using audio analysis (use `--no-enhancement` to skip):
 - **Pedal Detection**: Estimates sustain pedal usage from note overlap patterns and harmonic resonance
 - **Velocity Enhancement**: Improves dynamics using spectral energy and attack characteristics
 - **Timing Refinement**: Sub-frame precision (±50ms) for onsets/offsets using spectral flux
 - Inspired by ByteDance's GiantMIDI-Piano project (10,855 transcriptions)
 - Adds ~15-20 seconds processing time
-- Best for complex performances where expression matters
+- Enabled by default for best quality; use `--no-enhancement` if speed is critical
 
 ### 📊 Quality Evaluation (NEW! - RUNS BY DEFAULT)
 - **Onset F1 Score**: Note timing accuracy (MIREX standard)
