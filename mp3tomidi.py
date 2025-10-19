@@ -18,7 +18,7 @@ from transcribe import AudioTranscriber
 from hand_separator import HandSeparator
 from midi_corrector import MidiCorrector
 from audio_separator import AudioSeparator
-from motif_extractor_v2 import EnhancedMotifExtractor
+from motif_extractor_v2 import MusicalPhraseDetector
 import mido
 
 
@@ -128,34 +128,34 @@ Notes:
     )
     
     parser.add_argument(
-        '--extract-motif',
+        '--extract-phrases',
         action='store_true',
-        help='Extract the most repeated motif to a separate MIDI file'
+        help='Extract repeated musical phrases (6-14 notes) to separate MIDI files'
     )
     
     parser.add_argument(
-        '--motif-min-length',
+        '--phrase-min-length',
         type=int,
-        default=5,
-        help='Minimum motif length in notes (default: 5)'
+        default=6,
+        help='Minimum phrase length in notes (default: 6)'
     )
     
     parser.add_argument(
-        '--motif-max-length',
+        '--phrase-max-length',
         type=int,
-        default=12,
-        help='Maximum motif length in notes (default: 12)'
+        default=14,
+        help='Maximum phrase length in notes (default: 14)'
     )
     
     parser.add_argument(
-        '--motif-count',
+        '--phrase-count',
         type=int,
         default=1,
-        help='Number of top motifs to extract (default: 1)'
+        help='Number of top phrases to extract (default: 1)'
     )
     
     parser.add_argument(
-        '--motif-similarity',
+        '--phrase-similarity',
         type=float,
         default=0.8,
         help='Similarity threshold for approximate matching 0-1 (default: 0.8)'
@@ -280,29 +280,29 @@ Notes:
             print(f"  - Right hand: {right_notes} notes")
             print(f"  - Left hand: {left_notes} notes")
         
-        # Step 5: Extract motif (optional)
-        if args.extract_motif:
-            print(f"\n[5/6] Extracting top {args.motif_count} motif(s)...")
-            extractor = EnhancedMotifExtractor(
-                min_motif_length=args.motif_min_length,
-                max_motif_length=args.motif_max_length,
-                similarity_threshold=args.motif_similarity
+        # Step 5: Extract musical phrases (optional)
+        if args.extract_phrases:
+            print(f"\n[5/6] Extracting top {args.phrase_count} musical phrase(s)...")
+            detector = MusicalPhraseDetector(
+                min_phrase_length=args.phrase_min_length,
+                max_phrase_length=args.phrase_max_length,
+                similarity_threshold=args.phrase_similarity
             )
             
-            # Create motif output path
+            # Create phrase output path
             output_path_obj = Path(args.output)
-            motif_output = output_path_obj.parent / f"{output_path_obj.stem}_motif.mid"
+            phrase_output = output_path_obj.parent / f"{output_path_obj.stem}_phrase.mid"
             
-            # Extract motif from the corrected MIDI (before hand separation)
-            motif_results = extractor.extract(
+            # Extract phrases from the corrected MIDI (before hand separation)
+            phrase_results = detector.extract(
                 transcribed_midi, 
-                str(motif_output), 
+                str(phrase_output), 
                 verbose=args.verbose,
-                top_n=args.motif_count
+                top_n=args.phrase_count
             )
         
         # Step 6: Save output
-        step_num = "6/6" if args.extract_motif else "5/5"
+        step_num = "6/6" if args.extract_phrases else "5/5"
         print(f"\n[{step_num}] Saving output MIDI file...")
         separated_midi.save(args.output)
         
@@ -332,13 +332,13 @@ Notes:
         print(f"  Track 0: Right Hand")
         print(f"  Track 1: Left Hand")
         
-        if args.extract_motif and motif_results:
-            print(f"\n✓ Extracted {len(motif_results)} motif(s):")
-            for result in motif_results:
+        if args.extract_phrases and phrase_results:
+            print(f"\n✓ Extracted {len(phrase_results)} musical phrase(s):")
+            for result in phrase_results:
                 print(f"  #{result['rank']}: {result['file']} "
-                      f"(score: {result['score']:.1f}, {result['frequency']}x)")
-        elif args.extract_motif:
-            print(f"\n⚠ No significant motifs found")
+                      f"(score: {result['score']:.1f}, {result['frequency']}x, {result['length']} notes)")
+        elif args.extract_phrases:
+            print(f"\n⚠ No significant musical phrases found")
         
     except Exception as e:
         print(f"\n✗ Error: {str(e)}", file=sys.stderr)

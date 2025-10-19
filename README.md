@@ -35,14 +35,14 @@ Creates `output/input.mid` with 2 tracks (right hand + left hand).
 .\RUN.bat input.mp3 -o myfile.mid      # Save to specific file
 ```
 
-### Extract Repeated Motifs
+### Extract Repeated Musical Phrases
 ```powershell
-# Extract single best motif
-.\RUN.bat input.mp3 --extract-motif --verbose
+# Extract single best phrase
+.\RUN.bat input.mp3 --extract-phrases --verbose
 
-# Extract top 3 motifs
-.\RUN.bat input.mp3 --extract-motif --motif-count 3 --verbose
-# Creates: output/input.mid + output/input_motif1.mid, input_motif2.mid, input_motif3.mid
+# Extract top 3 phrases
+.\RUN.bat input.mp3 --extract-phrases --phrase-count 3 --verbose
+# Creates: output/input.mid + output/input_phrase1.mid, input_phrase2.mid, input_phrase3.mid
 ```
 
 ### Change Split Point
@@ -81,14 +81,14 @@ Catch quieter notes:
 |--------|-------------|---------|
 | `--no-separation` | Skip audio separation (for solo piano) | off |
 
-### Motif Extraction Options
+### Musical Phrase Detection Options
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--extract-motif` | Extract most repeated motif(s) | off |
-| `--motif-count` | Number of top motifs to extract | 1 |
-| `--motif-min-length` | Minimum notes in motif | 5 |
-| `--motif-max-length` | Maximum notes in motif | 16 |
-| `--motif-similarity` | Similarity threshold for matching (0-1) | 0.8 |
+| `--extract-phrases` | Extract repeated musical phrases | off |
+| `--phrase-count` | Number of top phrases to extract | 1 |
+| `--phrase-min-length` | Minimum notes in phrase | 6 |
+| `--phrase-max-length` | Maximum notes in phrase | 14 |
+| `--phrase-similarity` | Similarity threshold for matching (0-1) | 0.8 |
 
 ### Error Correction Options
 | Option | Description | Default |
@@ -170,14 +170,15 @@ Opens in any DAW or notation software (MuseScore, FL Studio, Ableton, Sibelius, 
 - Voice leading principles
 - Configurable split point and hysteresis
 
-### 🎼 Motif Extraction (ENHANCED!)
-- **Identifies musically significant repeated motifs** automatically
-- **Advanced scoring**: frequency + length + melodic interest + rhythm variety
-- **Approximate matching**: finds similar patterns with variations (edit distance)
+### 🎼 Musical Phrase Detection (NEW!)
+- **Identifies repeated melodic phrases** (6-14 notes) automatically
+- **Complete phrases**: detects full melodic statements, not just short motifs
+- **Advanced scoring**: frequency + phrase completeness + melodic coherence + rhythm
+- **Approximate matching**: finds similar phrases with variations (edit distance)
 - **Transposition-invariant**: uses interval sequences, works in any key
-- **Top-N extraction**: can find multiple best motifs, ranked by score
-- Exports motifs as separate MIDI files
-- Useful for finding themes, hooks, riffs, and recurring melodies
+- **Top-N extraction**: can find multiple best phrases, ranked by score
+- Exports phrases as separate MIDI files
+- Useful for finding recurring themes, melodic hooks, and memorable sections
 
 ## Technology
 

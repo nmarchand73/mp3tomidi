@@ -1,11 +1,12 @@
 """
-Enhanced Motif Extraction Module
+Musical Phrase Detection Module
 
-Uses advanced pattern recognition techniques:
+Identifies repeated musical phrases (6-14 notes) using advanced techniques:
 - Point-set pattern matching for polyphonic music
 - Dynamic Time Warping (DTW) for tempo-invariant matching
 - Approximate pattern matching with edit distance
 - Weighted scoring (frequency, length, musical significance)
+- Focuses on complete melodic phrases, not short motifs
 """
 
 import mido
@@ -29,8 +30,8 @@ class Note:
 
 
 @dataclass
-class Motif:
-    """Represents a detected motif with metadata."""
+class MusicalPhrase:
+    """Represents a detected musical phrase with metadata."""
     notes: List[Note]
     frequency: int
     occurrences: List[int]  # Start times of occurrences
@@ -53,35 +54,37 @@ class Motif:
                     for i in range(len(self.notes) - 1))
 
 
-class EnhancedMotifExtractor:
+class MusicalPhraseDetector:
     """
-    Advanced motif extraction using multiple algorithms.
+    Advanced musical phrase detection using multiple algorithms.
+    
+    Detects complete melodic phrases (6-14 notes) rather than short motifs.
     
     Combines:
     - Point-set pattern matching
     - Dynamic Time Warping for approximate matching
     - Edit distance for similarity
-    - Musical significance scoring
+    - Musical significance scoring with emphasis on phrase completeness
     """
     
     def __init__(self, 
-                 min_motif_length: int = 5,
-                 max_motif_length: int = 16,
+                 min_phrase_length: int = 6,
+                 max_phrase_length: int = 14,
                  min_frequency: int = 3,
                  allow_transposition: bool = True,
                  similarity_threshold: float = 0.8):
         """
-        Initialize the enhanced motif extractor.
+        Initialize the musical phrase detector.
         
         Args:
-            min_motif_length: Minimum number of notes in a motif
-            max_motif_length: Maximum number of notes in a motif
-            min_frequency: Minimum times a pattern must repeat
+            min_phrase_length: Minimum number of notes in a phrase (default: 6)
+            max_phrase_length: Maximum number of notes in a phrase (default: 14)
+            min_frequency: Minimum times a phrase must repeat (default: 3)
             allow_transposition: Allow transposed versions of patterns
             similarity_threshold: Threshold for approximate matching (0-1)
         """
-        self.min_motif_length = min_motif_length
-        self.max_motif_length = max_motif_length
+        self.min_phrase_length = min_phrase_length
+        self.max_phrase_length = max_phrase_length
         self.min_frequency = min_frequency
         self.allow_transposition = allow_transposition
         self.similarity_threshold = similarity_threshold
@@ -127,7 +130,7 @@ class EnhancedMotifExtractor:
     
     def find_exact_patterns(self, notes: List[Note]) -> Counter:
         """
-        Find exact repeated patterns using interval sequences.
+        Find exact repeated musical phrases using interval sequences.
         Intervals are transposition-invariant.
         
         Args:
@@ -138,8 +141,8 @@ class EnhancedMotifExtractor:
         """
         patterns = Counter()
         
-        for length in range(self.min_motif_length, 
-                          min(self.max_motif_length + 1, len(notes))):
+        for length in range(self.min_phrase_length, 
+                          min(self.max_phrase_length + 1, len(notes))):
             for i in range(len(notes) - length + 1):
                 segment = notes[i:i + length]
                 
@@ -240,16 +243,17 @@ class EnhancedMotifExtractor:
         
         return pattern_groups
     
-    def score_motif(self, pattern: Tuple, frequency: int, notes: List[Note]) -> float:
+    def score_phrase(self, pattern: Tuple, frequency: int, notes: List[Note]) -> float:
         """
-        Score a motif based on multiple musical factors.
+        Score a musical phrase based on multiple factors.
         
-        Factors:
+        Emphasizes phrase completeness and musical coherence:
         - Frequency (how often it repeats)
-        - Length (longer patterns are more significant)
-        - Melodic contour (stepwise motion vs leaps)
-        - Rhythmic variety
-        - Pitch range
+        - Length (complete phrases are 7-12 notes)
+        - Melodic contour (balanced stepwise motion and leaps)
+        - Rhythmic variety (phrases have rhythmic structure)
+        - Pitch range (phrases span a meaningful range)
+        - Phrase closure (ends on stable notes)
         
         Args:
             pattern: (intervals, rhythm, start_pitch)
@@ -264,20 +268,28 @@ class EnhancedMotifExtractor:
         # Frequency score (logarithmic to avoid dominating other factors)
         freq_score = np.log1p(frequency) * 2.0
         
-        # Length score (prefer longer patterns, strong penalty for short ones)
+        # Length score (prefer complete phrases: 7-12 notes)
         length = len(intervals) + 1
-        optimal_length = 8
+        optimal_length = 9  # Typical phrase length in popular music
         
-        # Strong penalty for very short motifs (< 5 notes)
-        if length < 5:
-            length_penalty = -5.0
-        elif length < 6:
-            length_penalty = -2.0
+        # Strong penalty for incomplete phrases
+        if length < 6:
+            length_penalty = -8.0  # Reject fragments < 6 notes
+        elif length < 7:
+            length_penalty = -3.0  # Discourage very short phrases
         else:
-            length_penalty = 0.0
+            length_penalty = 0.0   # Accept phrase-length patterns
         
-        # Reward patterns close to optimal length
-        length_score = min(length / optimal_length, optimal_length / max(length, 1)) * 4.0 + length_penalty
+        # Bonus for complete phrases (7-12 notes)
+        if 7 <= length <= 12:
+            length_bonus = 2.0  # Strong bonus for typical phrase length
+        elif length == 6:
+            length_bonus = 0.5  # Small bonus for 6-note phrases
+        else:
+            length_bonus = 0.0
+        
+        # Reward patterns close to optimal phrase length
+        length_score = min(length / optimal_length, optimal_length / max(length, 1)) * 4.0 + length_penalty + length_bonus
         
         # Melodic interest score (mix of steps and leaps)
         if intervals:
@@ -336,47 +348,47 @@ class EnhancedMotifExtractor:
         
         return max(total_score, 0.0)
     
-    def get_best_motifs(self, midi_file: mido.MidiFile, 
-                       top_n: int = 5) -> List[Motif]:
+    def get_best_phrases(self, midi_file: mido.MidiFile, 
+                        top_n: int = 5) -> List[MusicalPhrase]:
         """
-        Get the top N best motifs based on scoring.
+        Get the top N best musical phrases based on scoring.
         
         Args:
             midi_file: Input MIDI file
-            top_n: Number of top motifs to return
+            top_n: Number of top phrases to return
             
         Returns:
-            List of Motif objects, sorted by score
+            List of MusicalPhrase objects, sorted by score
         """
         notes = self.extract_notes(midi_file)
         
-        if len(notes) < self.min_motif_length:
+        if len(notes) < self.min_phrase_length:
             return []
         
         # Find approximate patterns (which includes exact patterns)
         pattern_groups = self.find_approximate_patterns(notes)
         
         # Score each pattern group
-        scored_motifs = []
+        scored_phrases = []
         for representative, similar_patterns, total_count in pattern_groups:
-            score = self.score_motif(representative, total_count, notes)
+            score = self.score_phrase(representative, total_count, notes)
             
             # Find actual note sequences for the representative pattern
-            motif_notes = self._find_pattern_notes(notes, representative)
+            phrase_notes = self._find_pattern_notes(notes, representative)
             
-            if motif_notes:
-                motif = Motif(
-                    notes=motif_notes,
+            if phrase_notes:
+                phrase = MusicalPhrase(
+                    notes=phrase_notes,
                     frequency=total_count,
                     occurrences=[],  # Could track specific occurrences
                     score=score,
                     pattern_type='exact' if len(similar_patterns) == 1 else 'approximate'
                 )
-                scored_motifs.append(motif)
+                scored_phrases.append(phrase)
         
         # Sort by score and return top N
-        scored_motifs.sort(key=lambda m: m.score, reverse=True)
-        return scored_motifs[:top_n]
+        scored_phrases.sort(key=lambda p: p.score, reverse=True)
+        return scored_phrases[:top_n]
     
     def _find_pattern_notes(self, notes: List[Note], 
                            pattern: Tuple) -> Optional[List[Note]]:
@@ -400,13 +412,13 @@ class EnhancedMotifExtractor:
         
         return None
     
-    def create_motif_midi(self, motif: Motif, output_path: str, 
-                         ticks_per_beat: int = 480):
+    def create_phrase_midi(self, phrase: MusicalPhrase, output_path: str, 
+                          ticks_per_beat: int = 480):
         """
-        Create a MIDI file containing the motif.
+        Create a MIDI file containing the musical phrase.
         
         Args:
-            motif: Motif object to export
+            phrase: MusicalPhrase object to export
             output_path: Path to save the MIDI file
             ticks_per_beat: MIDI ticks per beat
         """
@@ -415,11 +427,11 @@ class EnhancedMotifExtractor:
         midi.tracks.append(track)
         
         # Add metadata
-        track.append(mido.MetaMessage('track_name', name='Motif', time=0))
+        track.append(mido.MetaMessage('track_name', name='Musical Phrase', time=0))
         track.append(mido.MetaMessage('set_tempo', tempo=500000, time=0))
         
         # Sort notes by start time
-        sorted_notes = sorted(motif.notes, key=lambda n: n.start_time)
+        sorted_notes = sorted(phrase.notes, key=lambda n: n.start_time)
         
         # Normalize times - start from 0
         if sorted_notes:
@@ -455,42 +467,42 @@ class EnhancedMotifExtractor:
     def extract(self, midi_file: mido.MidiFile, output_path: str, 
                 verbose: bool = False, top_n: int = 1) -> Optional[List[dict]]:
         """
-        Extract and save top motifs.
+        Extract and save top musical phrases.
         
         Args:
             midi_file: Input MIDI file
-            output_path: Base path for output (will add _motif1, _motif2, etc.)
+            output_path: Base path for output (will add _phrase1, _phrase2, etc.)
             verbose: Print detailed information
-            top_n: Number of top motifs to extract
+            top_n: Number of top phrases to extract
             
         Returns:
-            List of dictionaries with motif info
+            List of dictionaries with phrase info
         """
-        motifs = self.get_best_motifs(midi_file, top_n=top_n)
+        phrases = self.get_best_phrases(midi_file, top_n=top_n)
         
-        if not motifs:
+        if not phrases:
             if verbose:
-                print("  No significant repeated motifs found")
+                print("  No significant repeated musical phrases found")
             return None
         
         results = []
         output_base = Path(output_path)
         
-        for idx, motif in enumerate(motifs):
+        for idx, phrase in enumerate(phrases):
             if verbose:
                 rank = idx + 1
-                print(f"\n  Motif #{rank}:")
-                print(f"    - Score: {motif.score:.2f}")
-                print(f"    - Frequency: {motif.frequency} times")
-                print(f"    - Length: {motif.length} notes")
-                print(f"    - Type: {motif.pattern_type}")
+                print(f"\n  Musical Phrase #{rank}:")
+                print(f"    - Score: {phrase.score:.2f}")
+                print(f"    - Frequency: {phrase.frequency} times")
+                print(f"    - Length: {phrase.length} notes")
+                print(f"    - Type: {phrase.pattern_type}")
                 
                 # Show interval pattern
-                intervals = motif.interval_sequence
+                intervals = phrase.interval_sequence
                 print(f"    - Intervals: {intervals}")
                 
                 # Calculate pitch range
-                pitches = [n.pitch for n in motif.notes]
+                pitches = [n.pitch for n in phrase.notes]
                 pitch_range = max(pitches) - min(pitches)
                 print(f"    - Pitch range: {pitch_range} semitones")
                 
@@ -500,23 +512,23 @@ class EnhancedMotifExtractor:
             
             # Create output filename
             if top_n == 1:
-                motif_path = output_base.parent / f"{output_base.stem}_motif.mid"
+                phrase_path = output_base.parent / f"{output_base.stem}_phrase.mid"
             else:
-                motif_path = output_base.parent / f"{output_base.stem}_motif{idx+1}.mid"
+                phrase_path = output_base.parent / f"{output_base.stem}_phrase{idx+1}.mid"
             
-            # Save motif
-            self.create_motif_midi(motif, str(motif_path), midi_file.ticks_per_beat)
+            # Save phrase
+            self.create_phrase_midi(phrase, str(phrase_path), midi_file.ticks_per_beat)
             
             if verbose:
-                print(f"    - Saved to: {motif_path}")
+                print(f"    - Saved to: {phrase_path}")
             
             results.append({
                 'rank': idx + 1,
-                'score': motif.score,
-                'frequency': motif.frequency,
-                'length': motif.length,
-                'pattern_type': motif.pattern_type,
-                'file': str(motif_path)
+                'score': phrase.score,
+                'frequency': phrase.frequency,
+                'length': phrase.length,
+                'pattern_type': phrase.pattern_type,
+                'file': str(phrase_path)
             })
         
         return results
