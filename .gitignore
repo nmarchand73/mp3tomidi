@@ -42,8 +42,10 @@ Thumbs.db
 *.flac
 
 # Output folder (generated MIDI files)
-output/*.mid
-output/*.midi
+output/midi/*.mid
+output/midi/*.midi
+output/phrases/*.mid
+output/phrases/*.midi
 
 # Temporary files
 *.tmp

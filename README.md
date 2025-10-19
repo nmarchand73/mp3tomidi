@@ -24,7 +24,7 @@ C:\Users\nmarc\miniconda3\envs\mp3tomidi\python.exe mp3tomidi.py "input\A Forest
 ```powershell
 C:\Users\nmarc\miniconda3\envs\mp3tomidi\python.exe mp3tomidi.py input.mp3
 ```
-Creates `output/input.mid` with 2 tracks (right hand + left hand).
+Creates `output/midi/input.mid` with 2 tracks (right hand + left hand).
 
 **Note:** First run will download AI models (~80MB for Demucs). Audio separation adds ~1-2 minutes per minute of audio. Use `--no-separation` for solo piano recordings (faster).
 
@@ -42,7 +42,7 @@ Creates `output/input.mid` with 2 tracks (right hand + left hand).
 
 # Extract top 3 phrases
 .\RUN.bat input.mp3 --extract-phrases --phrase-count 3 --verbose
-# Creates: output/input.mid + output/input_phrase1.mid, input_phrase2.mid, input_phrase3.mid
+# Creates: output/midi/input.mid + output/phrases/input_phrase_phrase1.mid, phrase2.mid, phrase3.mid
 ```
 
 ### Change Split Point

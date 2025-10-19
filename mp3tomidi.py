@@ -175,14 +175,18 @@ Notes:
         print(f"Error: Input file not found: {args.input}", file=sys.stderr)
         sys.exit(1)
     
-    # Create output directory if it doesn't exist
+    # Create output directory structure
     output_dir = Path("output")
-    output_dir.mkdir(exist_ok=True)
+    midi_dir = output_dir / "midi"
+    phrases_dir = output_dir / "phrases"
+    
+    midi_dir.mkdir(parents=True, exist_ok=True)
+    phrases_dir.mkdir(parents=True, exist_ok=True)
     
     # Determine output path
     if args.output is None:
         input_path = Path(args.input)
-        args.output = output_dir / f"{input_path.stem}.mid"
+        args.output = midi_dir / f"{input_path.stem}.mid"
     else:
         args.output = Path(args.output)
         # Ensure output directory exists for custom paths
