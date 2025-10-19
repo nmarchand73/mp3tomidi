@@ -110,14 +110,14 @@ Notes:
     parser.add_argument(
         '--min-note-duration',
         type=float,
-        default=100.0,
-        help='Minimum note duration in milliseconds for error correction (default: 100)'
+        default=120.0,
+        help='Minimum note duration in milliseconds for error correction (default: 120)'
     )
     
     parser.add_argument(
-        '--quantize',
+        '--no-quantize',
         action='store_true',
-        help='Apply rhythmic quantization to MIDI output (50%% strength)'
+        help='Disable rhythmic quantization (enabled by default with 50%% strength)'
     )
     
     parser.add_argument(
@@ -278,7 +278,7 @@ Notes:
             corrector = MidiCorrector(
                 min_note_duration_ms=args.min_note_duration,
                 min_velocity=args.min_velocity,
-                quantize=args.quantize,
+                quantize=not args.no_quantize,  # Quantize by default unless disabled
                 quantize_resolution=args.quantize_resolution
             )
             transcribed_midi = corrector.correct(transcribed_midi, verbose=args.verbose)
