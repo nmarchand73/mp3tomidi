@@ -20,6 +20,7 @@ from midi_corrector import MidiCorrector
 from audio_separator import AudioSeparator
 from motif_extractor_v2 import MusicalPhraseDetector
 from audio_midi_aligner import AudioMidiAligner
+from spectral_transcriber import SpectralTranscriber
 import mido
 
 
@@ -79,6 +80,12 @@ Notes:
         '--align-to-audio',
         action='store_true',
         help='Align MIDI timing to audio using spectral analysis (advanced, slower)'
+    )
+    
+    parser.add_argument(
+        '--use-spectral',
+        action='store_true',
+        help='Use CQT spectral analysis instead of neural network (experimental, may be more accurate)'
     )
     
     parser.add_argument(
